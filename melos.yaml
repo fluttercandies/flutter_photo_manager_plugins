@@ -1,0 +1,5 @@
+name: photo_manager_workspace
+
+packages:
+  - packages/*
+  - flutter_photo_manager

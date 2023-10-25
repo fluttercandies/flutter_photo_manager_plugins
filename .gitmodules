@@ -1,0 +1,3 @@
+[submodule "flutter_photo_manager"]
+	path = flutter_photo_manager
+	url = https://github.com/fluttercandies/flutter_photo_manager.git

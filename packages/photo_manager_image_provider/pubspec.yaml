@@ -1,0 +1,20 @@
+name: photo_manager_image_provider
+description: A Flutter plugin, provide image_provider for photo_manager's AssetEntity.
+version: 1.0.0
+homepage: 
+
+environment:
+  sdk: ">=2.13.0 <4.0.0"
+  flutter: ">=2.2.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  photo_manager: ^2.7.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^2.0.0
+
+flutter:
