@@ -3,3 +3,14 @@ name: photo_manager_workspace
 packages:
   - packages/*
   - flutter_photo_manager
+
+scripts:
+  cp_files:
+    packageFilters:
+      # dirExists: "photo_manager_"
+      scope: "photo_manager_*"
+    exec: |
+      set -e
+      if [ -f "../../LICENSE" ]; then
+        cp ../../LICENSE LICENSE
+      fi
