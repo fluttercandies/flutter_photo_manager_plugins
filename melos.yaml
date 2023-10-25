@@ -1,4 +1,5 @@
 name: photo_manager_workspace
+repository: https://github.com/fluttercandies/flutter_photo_manager_plugins
 
 packages:
   - packages/*
