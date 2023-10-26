@@ -34,6 +34,8 @@ with open(join(script_dir, 'template', 'lang.json'), 'r') as f:
         if os.path.exists(dest_path):
             print('The %s is exists, skip it.' % dest_path)
             continue
+        else:
+            os.makedirs(os.path.dirname(dest_path), exist_ok=True)
 
         # write content
         content = src.replace(src_content, v)
