@@ -1,0 +1,4 @@
+User-agent: *
+Disallow: /tags/*
+
+Sitemap: https://fluttercandies.github.io/flutter_photo_manager_plugins/sitemap.xml
