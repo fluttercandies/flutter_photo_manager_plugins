@@ -1,0 +1,50 @@
+baseURL = "https://fluttercandies.github.io/flutter_photo_manager_plugins/"
+title = "Plugins for photo_manager"
+theme = "hugo-geekdoc"
+
+publishDir = "../public"
+contentDir = "../src"
+
+pluralizeListTitles = false
+
+# Geekdoc required configuration
+pygmentsUseClasses = true
+pygmentsCodeFences = true
+disablePathToLower = true
+
+# Required if you want to render robots.txt template
+enableRobotsTXT = true
+
+# Needed for mermaid shortcodes
+[markup]
+[markup.goldmark.renderer]
+# Needed for mermaid shortcode
+unsafe = true
+[markup.tableOfContents]
+startLevel = 1
+endLevel = 6
+
+[taxonomies]
+tag = "tags"
+
+[params]
+geekdocSearch = true
+geekdocSearchShowParent = true
+geekdocRepo = "https://github.com/fluttercandies/flutter_photo_manager_plugins/tree/main/docs"
+geekdocCollapseAllSections = true
+
+[params.geekdocContentLicense]
+name = "CC BY-SA 4.0"
+link = "https://creativecommons.org/licenses/by-sa/4.0/"
+
+defaultContentLanguage = "en"
+
+[languages.en]
+languageName = "English"
+contentDir = "../src/en"
+weight = 10
+
+[languages.zh]
+languageName = "中文"
+contentDir = "../src/zh"
+weight = 20
