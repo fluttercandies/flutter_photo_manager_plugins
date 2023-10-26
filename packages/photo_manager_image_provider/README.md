@@ -1,39 +1,39 @@
-<!--
-This README describes the package. If you publish this package to pub.dev,
-this README's contents appear on the landing page for your package.
+# image_provider for photo_manager
 
-For information about how to write a good package README, see the guide for
-[writing package pages](https://dart.dev/guides/libraries/writing-package-pages).
+The package is a plugin for [photo_manager][].
 
-For general information about developing packages, see the Dart guide for
-[creating packages](https://dart.dev/guides/libraries/create-library-packages)
-and the Flutter guide for
-[developing packages and plugins](https://flutter.dev/developing-packages).
--->
+Its function is to make it easier to use `ImageProvider` in flutter
+to load images provided by photo_manager.
 
-TODO: Put a short description of the package here that helps potential users
-know whether this package might be useful for them.
+It was originally part of [photo_manager][], However, as the flutter sdk is updated, the obsolescence of the old API will cause incompatibility in photo_manager.
 
-## Features
+So, the parts related to image_provider are split here, which is used to ensure the compatibility between the photo_manager version and the flutter version.
 
-TODO: List what your package can do. Maybe include images, gifs, or videos.
-
-## Getting started
-
-TODO: List prerequisites and provide or point to information on how to
-start using the package.
+See [doc of compatibility][compatibility] to get plugin version compatibility information.
 
 ## Usage
 
-TODO: Include short and useful examples for package users. Add longer examples
-to `/example` folder.
-
-```dart
-const like = 'sample';
+```yaml
+dependencies:
+  photo_manager_image_provider: #version
 ```
 
-## Additional information
+```dart
+import 'package:photo_manager/photo_manager.dart';
+import 'package:photo_manager_image_provider/photo_manager_image_provider.dart';
 
-TODO: Tell users more about the package: where to find more information, how to
-contribute to the package, how to file issues, what response they can expect
-from the package authors, and more.
+
+Widget buildWidget(AssetEntity entity) {
+  return Image(
+    image: AssetEntityImageProvider(entity),
+  );
+}
+
+Widget buildWidget(AssetEntity entity) {
+  return AssetEntityImage(entity);
+}
+
+```
+
+[photo_manager]: https://pub.dev/packages/photo_manager
+[compatibility]: https://fluttercandies.github.io/flutter_photo_manager_plugins/image_provider/compatibility/
