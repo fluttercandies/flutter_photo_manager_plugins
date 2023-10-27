@@ -5,7 +5,7 @@ homepage: https://github.com/fluttercandies/flutter_photo_manager_plugins/tree/m
 
 environment:
   sdk: ">=2.13.0 <4.0.0"
-  flutter: ">=2.2.0"
+  flutter: ">=3.14.0"
 
 dependencies:
   flutter:

@@ -61,10 +61,8 @@ class AssetEntityImageProvider extends ImageProvider<AssetEntityImageProvider> {
   ImageFileType get imageFileType => _getType();
 
   @override
-  ImageStreamCompleter load(
-    AssetEntityImageProvider key,
-    DecoderCallback decode, // ignore: deprecated_member_use
-  ) {
+  ImageStreamCompleter loadImage(
+      AssetEntityImageProvider key, ImageDecoderCallback decode) {
     return MultiFrameImageStreamCompleter(
       codec: _loadAsync(key, decode),
       scale: 1.0,
@@ -88,7 +86,7 @@ class AssetEntityImageProvider extends ImageProvider<AssetEntityImageProvider> {
 
   Future<ui.Codec> _loadAsync(
     AssetEntityImageProvider key,
-    DecoderCallback decode, // ignore: deprecated_member_use
+    ImageDecoderCallback decode, // ignore: deprecated_member_use
   ) {
     if (_providerLocks.containsKey(key)) {
       return _providerLocks[key]!.future;
@@ -131,7 +129,8 @@ class AssetEntityImageProvider extends ImageProvider<AssetEntityImageProvider> {
         if (data == null) {
           throw StateError('The data of the entity is null: $entity');
         }
-        return decode(data);
+        final buffer = await ui.ImmutableBuffer.fromUint8List(data);
+        return decode(buffer);
       } catch (e, s) {
         if (kDebugMode) {
           FlutterError.presentError(
