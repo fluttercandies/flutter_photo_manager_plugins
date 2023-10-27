@@ -1,5 +1,5 @@
 ---
-title: "compatibility of photo_manager_image_provider"
+title: "compatibility"
 weight: 1
 # geekdocFlatSection: false
 # geekdocToc: 6
