@@ -2,8 +2,7 @@
 
 > Note: This release has breaking changes.
 
- - **DOCS**: Update homepage for photo_manager_provider.
- - **BREAKING** **FEAT**: Support flutter 3.14.0+.
+- **BREAKING** **FEAT**: Support flutter 3.14.0+.
 
 ## 1.0.0
 
