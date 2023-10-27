@@ -10,7 +10,7 @@ photo_manager_image_provider 版本的选择取决于 flutter 版本和 photo_ma
 
 | image_provider | flutter | photo_manager |
 | :---: | :---: | :---: |
-| ^1.0.0 | ">=2.13.0 <3.14.0" | ^2.6.0 |
+| ^1.0.0 | ">=2.2.0 <3.14.0" | ^2.6.0 |
 | ^2.0.0 | ^3.14.0 | ^2.6.0 |
 
 ## 更新日志

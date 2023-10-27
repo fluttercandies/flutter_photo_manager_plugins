@@ -14,7 +14,9 @@ You need add markdown file into [src/{lang}](./src/) directory.
 Also, you can use [script](./scripts/new.py) to create a new markdown file.
 
 ```bash
-python3 scripts/new.py
+python3 new.py
+# or
+./new.py
 ```
 
 Write content in created markdown file, then open pull request.
@@ -26,7 +28,9 @@ If you want to preview new docs
 You must install [hugo][] first.
 
 ```bash
-scripts/server.sh
+./server.sh
+# or
+bash server.sh
 ```
 
 [hugo]: https://gohugo.io/

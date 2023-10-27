@@ -17,11 +17,11 @@ script_dir = dirname(__file__)
 
 src_content = '<write_content>'
 
-with open(join(script_dir, 'template', 'template.md'), 'r') as f:
+with open(join(script_dir, 'scripts', 'template', 'template.md'), 'r') as f:
     src = f.read()
 
 # read json file
-with open(join(script_dir, 'template', 'lang.json'), 'r') as f:
+with open(join(script_dir, 'scripts', 'template', 'lang.json'), 'r') as f:
     lang = json.load(f)
 
     # Get all keys
@@ -31,8 +31,8 @@ with open(join(script_dir, 'template', 'lang.json'), 'r') as f:
         # create new file
         v = lang[key]
 
-        dest_name = '%s.%s.md' % (target_name, key)
-        dest_path = join(script_dir, '..', 'src', dest_name)
+        dest_name = '%s.%s.md' % ('index', key)
+        dest_path = join(script_dir, 'src', target_name, dest_name)
 
         if os.path.exists(dest_path):
             print('The %s is exists, skip it.' % dest_path)

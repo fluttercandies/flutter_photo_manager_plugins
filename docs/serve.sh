@@ -6,6 +6,6 @@ if ! [ -x "$(command -v hugo)" ]; then
   exit 1
 fi
 
-pwd=$(cd `dirname $0`; cd .. ; pwd)
+pwd=$(cd `dirname $0`; pwd)
 cd "$pwd/hugo"
 hugo serve -D --bind 0.0.0.0
