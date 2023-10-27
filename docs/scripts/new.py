@@ -30,7 +30,10 @@ with open(join(script_dir, 'template', 'lang.json'), 'r') as f:
     for key in keys:
         # create new file
         v = lang[key]
-        dest_path = join(script_dir, '..', 'src', key, target_name + '.md')
+
+        dest_name = '%s.%s.md' % (target_name, key)
+        dest_path = join(script_dir, '..', 'src', dest_name)
+
         if os.path.exists(dest_path):
             print('The %s is exists, skip it.' % dest_path)
             continue

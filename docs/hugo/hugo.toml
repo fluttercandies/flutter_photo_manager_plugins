@@ -41,10 +41,8 @@ defaultContentLanguage = "en"
 
 [languages.en]
 languageName = "English"
-contentDir = "../src/en"
 weight = 10
 
 [languages.zh]
 languageName = "中文"
-contentDir = "../src/zh"
 weight = 20
