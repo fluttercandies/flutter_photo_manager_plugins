@@ -1,3 +1,7 @@
+## 1.1.0
+
+ - **FEAT**: Upgrade photo_manager version.
+
 ## 1.0.0
 
  - Migrated from photo_manager
