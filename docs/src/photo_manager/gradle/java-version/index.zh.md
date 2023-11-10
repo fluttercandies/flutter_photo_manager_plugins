@@ -16,3 +16,15 @@ photo_manager 为了保证旧版本 AGP/flutter SDK 的兼容性
 5. 如果以上都没有找到，那么会使用 JavaVersion.current()
 
 以上的4、5步骤应该使用的是 Gradle 配置中的 JDK，通常是相同的
+
+例如，你配置了 gradle.properties 中的 `java.version` 为 `17`，
+那么，则相当于你修改了 photo_manager 下的 build.gradle 中的如下属性
+
+```groovy
+android {
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+```
