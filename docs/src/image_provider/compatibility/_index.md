@@ -8,10 +8,12 @@ weight: 1
 
 The version of `photo_manager_image_provider` depends on the flutter version and the photo_manager version.
 
+My recommend version:
+
 | image_provider | flutter | photo_manager |
 | :---: | :---: | :---: |
-| ^1.0.0 | ">=2.2.0 <3.14.0" | ^2.6.0 |
-| ^2.0.0 | ^3.14.0 | ^2.6.0 |
+| ^1.0.0 | ">=2.2.0 <3.14.0" | ^3.0.0-dev.1 |
+| ^2.0.0 | ^3.14.0 | ^3.0.0-dev.1 |
 
 ## Changelog
 

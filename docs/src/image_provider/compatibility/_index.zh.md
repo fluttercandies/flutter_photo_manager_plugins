@@ -8,10 +8,12 @@ weight: 1
 
 photo_manager_image_provider 版本的选择取决于 flutter 版本和 photo_manager 版本。
 
+推荐版本如下:
+
 | image_provider | flutter | photo_manager |
 | :---: | :---: | :---: |
-| ^1.0.0 | ">=2.2.0 <3.14.0" | ^2.6.0 |
-| ^2.0.0 | ^3.14.0 | ^2.6.0 |
+| ^1.0.0 | ">=2.2.0 <3.14.0" | ^3.0.0-dev.1 |
+| ^2.0.0 | ^3.14.0 | ^3.0.0-dev.1 |
 
 ## 更新日志
 
