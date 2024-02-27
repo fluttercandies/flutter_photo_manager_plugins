@@ -1,6 +1,10 @@
+## 2.1.1
+
+- **FEAT**: Add `frame` for `AssetEntityImage`.
+
 ## 2.1.0
 
- - **FEAT**: Update photo_manager dependency version.
+- **FEAT**: Update photo_manager dependency version.
 
 ## 2.0.0
 
