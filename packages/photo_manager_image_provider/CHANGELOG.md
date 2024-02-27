@@ -1,3 +1,7 @@
+## 1.1.1
+
+- **FEAT**: Add `frame` for `AssetEntityImage`.
+
 ## 1.1.0
 
  - **FEAT**: Upgrade photo_manager version.

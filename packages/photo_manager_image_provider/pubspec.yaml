@@ -1,6 +1,6 @@
 name: photo_manager_image_provider
 description: A Flutter plugin, provide image_provider for photo_manager's AssetEntity.
-version: 1.1.0
+version: 1.1.1
 homepage: https://github.com/fluttercandies/flutter_photo_manager_plugins/tree/main/packages/photo_manager_image_provider
 repository: https://github.com/fluttercandies/flutter_photo_manager_plugins
 

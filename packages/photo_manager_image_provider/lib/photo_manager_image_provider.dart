@@ -44,6 +44,7 @@ class AssetEntityImageProvider extends ImageProvider<AssetEntityImageProvider> {
     this.isOriginal = true,
     this.thumbnailSize = pmDefaultGridThumbnailSize,
     this.thumbnailFormat = ThumbnailFormat.jpeg,
+    this.frame = 0,
   }) : assert(
           isOriginal || thumbnailSize != null,
           "thumbSize must not be null when it's not original",
@@ -62,6 +63,9 @@ class AssetEntityImageProvider extends ImageProvider<AssetEntityImageProvider> {
 
   /// {@macro photo_manager.ThumbnailFormat}
   final ThumbnailFormat thumbnailFormat;
+
+  /// {@macro photo_manager.ThumbnailOption.frame}
+  final int frame;
 
   /// File type for the image asset, use it for some special type detection.
   /// 图片资源的类型，用于某些特殊类型的判断。
@@ -169,7 +173,7 @@ class AssetEntityImageProvider extends ImageProvider<AssetEntityImageProvider> {
     if (Platform.isIOS || Platform.isMacOS) {
       return ThumbnailOption.ios(size: size, format: thumbnailFormat);
     }
-    return ThumbnailOption(size: size, format: thumbnailFormat);
+    return ThumbnailOption(size: size, format: thumbnailFormat, frame: frame);
   }
 
   /// Get image type by reading the file extension.
@@ -248,6 +252,7 @@ class AssetEntityImage extends Image {
     this.isOriginal = true,
     this.thumbnailSize = pmDefaultGridThumbnailSize,
     this.thumbnailFormat = ThumbnailFormat.jpeg,
+    this.frame = 0,
     Key? key,
     ImageFrameBuilder? frameBuilder,
     ImageLoadingBuilder? loadingBuilder,
@@ -299,6 +304,7 @@ class AssetEntityImage extends Image {
   final bool isOriginal;
   final ThumbnailSize? thumbnailSize;
   final ThumbnailFormat thumbnailFormat;
+  final int frame;
 
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
