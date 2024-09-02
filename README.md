@@ -1,5 +1,7 @@
 # Plugins for [photo_manager][]
 
+Issues are managed in the primary repo: https://github.com/fluttercandies/flutter_photo_manager/issues
+
 <!-- The list is genrated by `dart tools/make_readme.dart` -->
 
 | Package | Version | Location | pub.dev |
