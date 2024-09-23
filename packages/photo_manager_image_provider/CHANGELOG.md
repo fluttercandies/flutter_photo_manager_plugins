@@ -1,3 +1,7 @@
+## 2.1.2
+
+- **FEAT**: Integrate progress handler into the image provider.
+
 ## 2.1.1
 
 - **FEAT**: Add `frame` for `AssetEntityImage`.
