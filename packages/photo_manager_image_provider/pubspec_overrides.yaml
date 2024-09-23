@@ -1,4 +1,0 @@
-# melos_managed_dependency_overrides: photo_manager
-dependency_overrides:
-  photo_manager:
-    path: ../../flutter_photo_manager

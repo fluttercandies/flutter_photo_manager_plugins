@@ -1,4 +1,4 @@
 .dart_tool
 .idea
 *.iml
-packages/photo_manager_image_provider/.flutter-plugins-dependencies
+pubspec_overrides.yaml

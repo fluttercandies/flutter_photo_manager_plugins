@@ -38,6 +38,7 @@ class AssetEntityImageProvider extends ImageProvider<AssetEntityImageProvider> {
     this.thumbnailSize = pmDefaultGridThumbnailSize,
     this.thumbnailFormat = ThumbnailFormat.jpeg,
     this.frame = 0,
+    this.progressHandler,
   }) : assert(
           isOriginal || thumbnailSize != null,
           "thumbSize must not be null when it's not original",
@@ -60,6 +61,9 @@ class AssetEntityImageProvider extends ImageProvider<AssetEntityImageProvider> {
   /// {@macro photo_manager.ThumbnailOption.frame}
   final int frame;
 
+  /// {@macro photo_manager.PMProgressHandler}
+  final PMProgressHandler? progressHandler;
+
   /// File type for the image asset, use it for some special type detection.
   /// 图片资源的类型，用于某些特殊类型的判断。
   ImageFileType get imageFileType => _getType();
@@ -78,6 +82,14 @@ class AssetEntityImageProvider extends ImageProvider<AssetEntityImageProvider> {
         return <DiagnosticsNode>[
           DiagnosticsProperty<ImageProvider>('Image provider', this),
           DiagnosticsProperty<AssetEntityImageProvider>('Image key', key),
+          DiagnosticsProperty<AssetEntity>('entity', entity),
+          DiagnosticsProperty<bool>('isOriginal', isOriginal),
+          DiagnosticsProperty<ThumbnailSize>('thumbnailSize', thumbnailSize),
+          DiagnosticsProperty<ThumbnailFormat>(
+            'thumbnailFormat',
+            thumbnailFormat,
+          ),
+          DiagnosticsProperty<int>('frame', frame),
         ];
       },
     );
@@ -119,15 +131,21 @@ class AssetEntityImageProvider extends ImageProvider<AssetEntityImageProvider> {
         typed_data.Uint8List? data;
         if (isOriginal) {
           if (key.entity.type == AssetType.video) {
-            data = await key.entity.thumbnailData;
-          } else if (type == ImageFileType.heic) {
-            data = await (await key.entity.file)?.readAsBytes();
+            data = await key.entity.thumbnailDataWithOption(
+              _thumbOption(const ThumbnailSize.square(500)),
+              progressHandler: progressHandler,
+            );
           } else {
-            data = await key.entity.originBytes;
+            final file = await key.entity.loadFile(
+              isOrigin: type != ImageFileType.heic,
+              progressHandler: progressHandler,
+            );
+            data = await file?.readAsBytes();
           }
         } else {
           data = await key.entity.thumbnailDataWithOption(
             _thumbOption(thumbnailSize!),
+            progressHandler: progressHandler,
           );
         }
         if (data == null) {
@@ -220,9 +238,11 @@ class AssetEntityImageProvider extends ImageProvider<AssetEntityImageProvider> {
       return true;
     }
     return entity == other.entity &&
+        isOriginal == other.isOriginal &&
         thumbnailSize == other.thumbnailSize &&
         thumbnailFormat == other.thumbnailFormat &&
-        isOriginal == other.isOriginal;
+        frame == other.frame &&
+        progressHandler == other.progressHandler;
   }
 
   @override
@@ -230,7 +250,9 @@ class AssetEntityImageProvider extends ImageProvider<AssetEntityImageProvider> {
       entity.hashCode ^
       isOriginal.hashCode ^
       thumbnailSize.hashCode ^
-      thumbnailFormat.hashCode;
+      thumbnailFormat.hashCode ^
+      frame.hashCode ^
+      progressHandler.hashCode;
 }
 
 /// A widget that displays an [AssetEntity] image.
@@ -238,11 +260,12 @@ class AssetEntityImageProvider extends ImageProvider<AssetEntityImageProvider> {
 /// The widget uses [AssetEntityImageProvider] internally to resolve assets.
 class AssetEntityImage extends Image {
   AssetEntityImage(
-    this.entity, {
-    this.isOriginal = true,
-    this.thumbnailSize = pmDefaultGridThumbnailSize,
-    this.thumbnailFormat = ThumbnailFormat.jpeg,
-    this.frame = 0,
+    AssetEntity entity, {
+    bool isOriginal = true,
+    ThumbnailSize? thumbnailSize = pmDefaultGridThumbnailSize,
+    ThumbnailFormat thumbnailFormat = ThumbnailFormat.jpeg,
+    int frame = 0,
+    PMProgressHandler? progressHandler,
     Key? key,
     ImageFrameBuilder? frameBuilder,
     ImageLoadingBuilder? loadingBuilder,
@@ -269,6 +292,8 @@ class AssetEntityImage extends Image {
             isOriginal: isOriginal,
             thumbnailSize: thumbnailSize,
             thumbnailFormat: thumbnailFormat,
+            frame: frame,
+            progressHandler: progressHandler,
           ),
           frameBuilder: frameBuilder,
           loadingBuilder: loadingBuilder,
@@ -289,23 +314,4 @@ class AssetEntityImage extends Image {
           isAntiAlias: isAntiAlias,
           filterQuality: filterQuality,
         );
-
-  final AssetEntity entity;
-  final bool isOriginal;
-  final ThumbnailSize? thumbnailSize;
-  final ThumbnailFormat thumbnailFormat;
-  final int frame;
-
-  @override
-  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
-    super.debugFillProperties(properties);
-    properties.add(DiagnosticsProperty<AssetEntity>('entity', entity));
-    properties.add(DiagnosticsProperty<bool>('isOriginal', isOriginal));
-    properties.add(
-      DiagnosticsProperty<ThumbnailSize>('thumbnailSize', thumbnailSize),
-    );
-    properties.add(
-      DiagnosticsProperty<ThumbnailFormat>('thumbnailFormat', thumbnailFormat),
-    );
-  }
 }
