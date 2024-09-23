@@ -1,9 +1,14 @@
-name: photo_manager_workspace
+name: photo_manager_plugins_workspace
 repository: https://github.com/fluttercandies/flutter_photo_manager_plugins
 
 packages:
   - packages/*
   - flutter_photo_manager
+
+ide:
+  intellij:
+    enabled: true
+    moduleNamePrefix: ''
 
 scripts:
   cp_files:
