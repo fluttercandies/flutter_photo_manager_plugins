@@ -82,6 +82,14 @@ class AssetEntityImageProvider extends ImageProvider<AssetEntityImageProvider> {
         return <DiagnosticsNode>[
           DiagnosticsProperty<ImageProvider>('Image provider', this),
           DiagnosticsProperty<AssetEntityImageProvider>('Image key', key),
+          DiagnosticsProperty<AssetEntity>('entity', entity),
+          DiagnosticsProperty<bool>('isOriginal', isOriginal),
+          DiagnosticsProperty<ThumbnailSize>('thumbnailSize', thumbnailSize),
+          DiagnosticsProperty<ThumbnailFormat>(
+            'thumbnailFormat',
+            thumbnailFormat,
+          ),
+          DiagnosticsProperty<int>('frame', frame),
         ];
       },
     );
@@ -230,9 +238,11 @@ class AssetEntityImageProvider extends ImageProvider<AssetEntityImageProvider> {
       return true;
     }
     return entity == other.entity &&
+        isOriginal == other.isOriginal &&
         thumbnailSize == other.thumbnailSize &&
         thumbnailFormat == other.thumbnailFormat &&
-        isOriginal == other.isOriginal;
+        frame == other.frame &&
+        progressHandler == other.progressHandler;
   }
 
   @override
@@ -240,7 +250,9 @@ class AssetEntityImageProvider extends ImageProvider<AssetEntityImageProvider> {
       entity.hashCode ^
       isOriginal.hashCode ^
       thumbnailSize.hashCode ^
-      thumbnailFormat.hashCode;
+      thumbnailFormat.hashCode ^
+      frame.hashCode ^
+      progressHandler.hashCode;
 }
 
 /// A widget that displays an [AssetEntity] image.
