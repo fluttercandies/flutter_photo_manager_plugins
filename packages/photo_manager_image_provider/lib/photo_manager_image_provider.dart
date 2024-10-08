@@ -14,7 +14,8 @@ import 'package:flutter/widgets.dart';
 
 import 'package:photo_manager/photo_manager.dart';
 
-final _providerLocks = <AssetEntityImageProvider, Completer<ui.Codec>>{};
+final _lockDecode = <AssetEntityImageProvider, Completer<ui.Codec>>{};
+final _lockImageTypes = <AssetEntityImageProvider, Completer<ImageFileType>>{};
 
 const ThumbnailSize pmDefaultGridThumbnailSize = ThumbnailSize.square(200);
 const String _libraryName = 'photo_manager';
@@ -66,11 +67,18 @@ class AssetEntityImageProvider extends ImageProvider<AssetEntityImageProvider> {
 
   /// File type for the image asset, use it for some special type detection.
   /// 图片资源的类型，用于某些特殊类型的判断。
-  ImageFileType get imageFileType => _getType();
+  Future<ImageFileType> get imageFileType async {
+    if (_lockImageTypes[this] != null) {
+      return _lockImageTypes[this]!.future;
+    }
+    return _getType();
+  }
 
   @override
   ImageStreamCompleter loadImage(
-      AssetEntityImageProvider key, ImageDecoderCallback decode) {
+    AssetEntityImageProvider key,
+    ImageDecoderCallback decode,
+  ) {
     return MultiFrameImageStreamCompleter(
       codec: _loadAsync(key, decode),
       scale: 1.0,
@@ -104,11 +112,11 @@ class AssetEntityImageProvider extends ImageProvider<AssetEntityImageProvider> {
     AssetEntityImageProvider key,
     ImageDecoderCallback decode, // ignore: deprecated_member_use
   ) {
-    if (_providerLocks.containsKey(key)) {
-      return _providerLocks[key]!.future;
+    if (_lockDecode.containsKey(key)) {
+      return _lockDecode[key]!.future;
     }
     final lock = Completer<ui.Codec>();
-    _providerLocks[key] = lock;
+    _lockDecode[key] = lock;
     Future(() async {
       try {
         assert(key == this);
@@ -118,15 +126,9 @@ class AssetEntityImageProvider extends ImageProvider<AssetEntityImageProvider> {
             'Image data for the ${key.entity.type} is not supported.',
           );
         }
-
-        // Define the image type.
-        final ImageFileType type;
-        if (key.imageFileType == ImageFileType.other) {
-          // Assume the title is invalid here, try again with the async getter.
-          type = _getType(await key.entity.titleAsync);
-        } else {
-          type = key.imageFileType;
-        }
+        final imageType =
+            await _lockImageTypes[key]?.future ?? await key.imageFileType;
+        _lockImageTypes[key] ??= Completer.sync()..complete(imageType);
 
         typed_data.Uint8List? data;
         if (isOriginal) {
@@ -137,7 +139,7 @@ class AssetEntityImageProvider extends ImageProvider<AssetEntityImageProvider> {
             );
           } else {
             final file = await key.entity.loadFile(
-              isOrigin: type != ImageFileType.heic,
+              isOrigin: imageType != ImageFileType.heic,
               progressHandler: progressHandler,
             );
             data = await file?.readAsBytes();
@@ -169,12 +171,8 @@ class AssetEntityImageProvider extends ImageProvider<AssetEntityImageProvider> {
         Future<void>.microtask(() => _evictCache(key));
         rethrow;
       }
-    }).then((codec) {
-      lock.complete(codec);
-    }).catchError((e, s) {
-      lock.completeError(e, s);
-    }).whenComplete(() {
-      _providerLocks.remove(key);
+    }).then(lock.complete).catchError(lock.completeError).whenComplete(() {
+      _lockDecode.remove(key);
     });
     return lock.future;
   }
@@ -188,39 +186,53 @@ class AssetEntityImageProvider extends ImageProvider<AssetEntityImageProvider> {
 
   /// Get image type by reading the file extension.
   /// 从图片后缀判断图片类型
-  ///
-  /// ⚠ Not all the system version support read file name from the entity,
-  /// so this method might not work sometime.
-  /// 并非所有的系统版本都支持读取文件名，所以该方法有时无法返回正确的类型。
-  ImageFileType _getType([String? filename]) {
-    ImageFileType? type;
-    final String? extension = filename?.split('.').last ??
-        entity.mimeType?.split('/').last ??
-        entity.title?.split('.').last;
-    if (extension != null) {
-      switch (extension.toLowerCase()) {
-        case 'jpg':
-        case 'jpeg':
-          type = ImageFileType.jpg;
-          break;
-        case 'png':
-          type = ImageFileType.png;
-          break;
-        case 'gif':
-          type = ImageFileType.gif;
-          break;
-        case 'tiff':
-          type = ImageFileType.tiff;
-          break;
-        case 'heic':
-          type = ImageFileType.heic;
-          break;
-        default:
-          type = ImageFileType.other;
-          break;
-      }
+  Future<ImageFileType> _getType([String? filename]) async {
+    if (_lockImageTypes[this] != null) {
+      return _lockImageTypes[this]!.future;
     }
-    return type ?? ImageFileType.other;
+    final lock = Completer<ImageFileType>();
+    _lockImageTypes[this] = lock;
+    Future(() async {
+      String? extension = filename?.split('.').last;
+      if (extension == null || extension.trim().isEmpty) {
+        extension = entity.mimeType?.split('.').last;
+      }
+      if (extension == null || extension.trim().isEmpty) {
+        extension = entity.title?.split('.').last;
+      }
+      if (extension == null || extension.trim().isEmpty) {
+        extension = (await entity.titleAsync).split('.').last;
+      }
+      if (extension.trim().isEmpty) {
+        extension = null;
+      }
+      ImageFileType? type;
+      if (extension != null) {
+        switch (extension.toLowerCase()) {
+          case 'jpg':
+          case 'jpeg':
+            type = ImageFileType.jpg;
+            break;
+          case 'png':
+            type = ImageFileType.png;
+            break;
+          case 'gif':
+            type = ImageFileType.gif;
+            break;
+          case 'tiff':
+            type = ImageFileType.tiff;
+            break;
+          case 'heic':
+            type = ImageFileType.heic;
+            break;
+          default:
+            type = ImageFileType.other;
+            break;
+        }
+      }
+      return type ?? ImageFileType.other;
+    }).then(lock.complete).catchError(lock.completeError);
+    return lock.future;
   }
 
   static void _evictCache(AssetEntityImageProvider key) {

@@ -1,3 +1,7 @@
+## 2.2.0
+
+- **FEAT**: Make file type of the image provider asynchronized.
+
 ## 2.1.2
 
 - **FEAT**: Integrate progress handler into the image provider.
