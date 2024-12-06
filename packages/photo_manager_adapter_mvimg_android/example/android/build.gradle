@@ -16,3 +16,11 @@ subprojects {
 tasks.register("clean", Delete) {
     delete rootProject.buildDir
 }
+
+// 显示当前JDK版本号
+def showJdkVersion() {
+    def javaVersion = JavaVersion.current()
+    println "Current JDK version: $javaVersion"
+}
+
+showJdkVersion()
