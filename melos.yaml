@@ -4,17 +4,22 @@ repository: https://github.com/fluttercandies/flutter_photo_manager_plugins
 packages:
   - packages/*
   - flutter_photo_manager
+  # - flutter_photo_manager/example
+  # - flutter_photo_manager/example_ohos
 
 ide:
   intellij:
     enabled: true
-    moduleNamePrefix: ''
+    moduleNamePrefix: ""
 
 scripts:
   cp_files:
+    description: "Copy LICENSE to all packages"
     packageFilters:
-      # dirExists: "photo_manager_"
       scope: "photo_manager_*"
+      ignore:
+        - flutter_photo_manager/example
+        - flutter_photo_manager/example_ohos
     exec: |
       set -e
       if [ -f "../../LICENSE" ]; then
