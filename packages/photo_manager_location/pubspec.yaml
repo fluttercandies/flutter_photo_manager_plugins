@@ -1,0 +1,27 @@
+name: photo_manager_location
+description: An opt-in photo_manager plugin that links CoreLocation to save assets with geographic coordinates on iOS and macOS.
+version: 1.0.0
+homepage: https://github.com/fluttercandies/flutter_photo_manager_plugins/tree/main/packages/photo_manager_location
+
+environment:
+  sdk: ">=2.13.0 <4.0.0"
+  flutter: ">=3.14.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  path: ^1.8.0
+  photo_manager: ">=2.6.0 <4.0.0"
+
+dev_dependencies:
+  flutter_lints: ^2.0.0
+
+flutter:
+  plugin:
+    platforms:
+      ios:
+        pluginClass: PMLocationPlugin
+        sharedDarwinSource: true
+      macos:
+        pluginClass: PMLocationPlugin
+        sharedDarwinSource: true
