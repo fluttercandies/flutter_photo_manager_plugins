@@ -77,9 +77,13 @@ jobs:
         run: |
           set -e
           SDK="$(xcrun --sdk macosx --show-sdk-path)"
+          FLUTTER_FW_PARENT="$(find "$FLUTTER_ROOT/bin/cache/artifacts/engine" \
+            -path '*darwin-x64*' -name 'FlutterMacOS.framework' -type d \
+            | head -1 | xargs dirname)"
           for src in packages/photo_manager_location/darwin/photo_manager_location/Sources/photo_manager_location/*.m; do
             echo "== Compiling $src =="
             clang -fsyntax-only -fobjc-arc -isysroot "$SDK" -fmodules \
+              -F"$FLUTTER_FW_PARENT" \
               -Ipackages/photo_manager_location/darwin/photo_manager_location/Sources/photo_manager_location \
               -Ipackages/photo_manager_location/darwin/photo_manager_location/Sources/photo_manager_location/include/photo_manager_location \
               "$src"
