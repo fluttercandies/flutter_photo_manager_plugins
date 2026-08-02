@@ -14,7 +14,7 @@ CoreLocation-free so apps that never save with location are not flagged by
 Apple's static scan.
                        DESC
   s.homepage         = 'https://github.com/fluttercandies/flutter_photo_manager_plugins/tree/main/packages/photo_manager_location'
-  s.license          = { :file => '../LICENSE' }
+  s.license          = { :type => 'Apache-2.0', :file => '../LICENSE' }
   s.author           = { 'FlutterCandies' => 'fluttercandies@googlegroups.com' }
   s.source           = { :http => 'https://github.com/fluttercandies/flutter_photo_manager_plugins' }
 

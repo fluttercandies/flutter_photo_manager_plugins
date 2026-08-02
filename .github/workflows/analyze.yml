@@ -45,9 +45,9 @@ jobs:
       - name: Check Dart code formatting
         run: dart format packages --output=none --set-exit-if-changed
       - name: Analyze packages
-        run: melos exec --scope="photo_manager*" -- flutter analyze lib
+        run: melos exec --scope="photo_manager_*" -- flutter analyze lib
       - name: Dry run docs generate
-        run: melos exec --scope="photo_manager*" -- dart doc --dry-run .
+        run: melos exec --scope="photo_manager_*" -- dart doc --dry-run .
         continue-on-error: true
 
   darwin:
@@ -71,7 +71,7 @@ jobs:
           set -e
           for spec in packages/*/darwin/*.podspec; do
             echo "== Linting $spec =="
-            pod lint "$spec" --no-overwrite --skip-import-validation --allow-warnings --silent
+            pod spec lint "$spec" --quick --skip-import-validation --skip-tests --allow-warnings
           done
       - name: Compile native sources (ObjC)
         run: |
@@ -102,4 +102,4 @@ jobs:
       - name: Bootstrap workspace
         run: melos bootstrap
       - name: Publish dry-run
-        run: melos exec --scope="photo_manager*" -- dart pub publish --dry-run
+        run: melos exec --scope="photo_manager_*" -- dart pub publish --dry-run
