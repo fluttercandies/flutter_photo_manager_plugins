@@ -1,0 +1,105 @@
+name: Analyze
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
+  pull_request:
+    branches:
+      - main
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
+
+# Disable permissions for all of the available permissions.
+permissions: {}
+
+jobs:
+  analyze:
+    name: Analyze
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          submodules: recursive
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2
+        with:
+          channel: "stable"
+          cache: true
+      - name: Log Dart/Flutter versions
+        run: |
+          dart --version
+          flutter --version
+      - run: flutter doctor -v
+      - name: Activate melos
+        run: dart pub global activate melos
+      - name: Bootstrap workspace
+        run: melos bootstrap
+      - name: Check Dart code formatting
+        run: dart format packages --output=none --set-exit-if-changed
+      - name: Analyze packages
+        run: melos exec --scope="photo_manager*" -- flutter analyze lib
+      - name: Dry run docs generate
+        run: melos exec --scope="photo_manager*" -- dart doc --dry-run .
+        continue-on-error: true
+
+  darwin:
+    name: Verify Darwin (podspec + native)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          submodules: recursive
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2
+        with:
+          channel: "stable"
+          cache: true
+      - run: flutter doctor -v
+      - name: Activate melos
+        run: dart pub global activate melos
+      - name: Bootstrap workspace
+        run: melos bootstrap
+      - name: Lint podspecs
+        run: |
+          set -e
+          for spec in packages/*/darwin/*.podspec; do
+            echo "== Linting $spec =="
+            pod lint "$spec" --no-overwrite --skip-import-validation --allow-warnings --silent
+          done
+      - name: Compile native sources (ObjC)
+        run: |
+          set -e
+          SDK="$(xcrun --sdk macosx --show-sdk-path)"
+          for src in packages/photo_manager_location/darwin/photo_manager_location/Sources/photo_manager_location/*.m; do
+            echo "== Compiling $src =="
+            clang -fsyntax-only -fobjc-arc -isysroot "$SDK" -fmodules \
+              -Ipackages/photo_manager_location/darwin/photo_manager_location/Sources/photo_manager_location \
+              -Ipackages/photo_manager_location/darwin/photo_manager_location/Sources/photo_manager_location/include/photo_manager_location \
+              "$src"
+          done
+
+  publishable:
+    name: Publish dry-run
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          submodules: recursive
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2
+        with:
+          channel: "stable"
+          cache: true
+      - run: flutter doctor -v
+      - name: Activate melos
+        run: dart pub global activate melos
+      - name: Bootstrap workspace
+        run: melos bootstrap
+      - name: Publish dry-run
+        run: melos exec --scope="photo_manager*" -- dart pub publish --dry-run
