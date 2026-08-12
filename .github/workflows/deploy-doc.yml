@@ -8,6 +8,9 @@ on:
       - 'docs/**'
       - '.github/workflows/deploy-doc.yml'
 
+permissions:
+  contents: read
+
 jobs:
   # Build job
   deploy:
@@ -16,18 +19,19 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@a37ce9120846195fa4ece8f58b268e6043cb2f26
         with:
           fetch-depth: 1
+          persist-credentials: false
       - name: Setup Hugo
-        uses: peaceiris/actions-hugo@v2
+        uses: peaceiris/actions-hugo@dc99976453b04b1029527154fc04fef80a4a49cf
         with:
           hugo-version: "0.119.0"
       - name: Build
         run: hugo --minify
         working-directory: docs/hugo
       - name: Deploy
-        uses: peaceiris/actions-gh-pages@v3
+        uses: peaceiris/actions-gh-pages@4a2e02b36f31d8974a0d09d3bb9f3172aa2d0d0d
         if: github.ref == 'refs/heads/main'
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
