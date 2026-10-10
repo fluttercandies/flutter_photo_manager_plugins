@@ -14,7 +14,8 @@
 - Android: MediaStore system thumbnail or the original through `ImageDecoder`
   on API 29+, decoded to the requested size in sRGB,
   `MediaStore.*.Thumbnails` and `BitmapFactory` with orientation correction on
-  API 26–28, JNI `malloc` buffers.
+  API 26–28, JNI `malloc` buffers. Video thumbnails smaller than the request
+  fall back to a `MediaMetadataRetriever` frame sized from the video.
 - Decoded pixels capped at `size² × 4`, so panoramas stay bounded.
 - Cancellation that recognises the `ImageCache` listener, so scrolled-away
   cells stop their native work without false cancels on `imageCache.clear()`.

@@ -143,6 +143,10 @@ Very wide or tall images are also capped at `size² × 4` pixels, so a 1024
 request for an 8000 × 1000 panorama yields 5793 × 724 instead of the full
 32 MB bitmap.
 
+Videos follow the same rule. On Android, when the system thumbnail is
+smaller than the request, the frame is read from the video itself at the
+size its own dimensions call for.
+
 Wide-gamut photos (Display P3) are converted to sRGB on both platforms,
 because Flutter reads the raw pixels as sRGB.
 

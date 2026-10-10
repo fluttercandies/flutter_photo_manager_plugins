@@ -81,6 +81,44 @@ final class RequestRegistryTests: XCTestCase {
         free(pointer)
     }
 
+    func testReplyQueuedBeforeDetachIsFreed() {
+        let registry = NativeImageRequestRegistry()
+        let attachment = EngineAttachment()
+        var replies = 0
+        var freed = 0
+        let s = NativeImageRequestState(
+            requestId: 14,
+            completion: attachment.mainThreadReply({ _ in replies += 1 }) {
+                freed += 1
+                free($0)
+            })
+        XCTAssertTrue(registry.register(s))
+        let delivered = DispatchSemaphore(value: 0)
+        DispatchQueue.global().async {
+            let pointer = malloc(16)!
+            registry.remove(requestId: 14)
+            s.deliver(.success(["pointer": Int64(Int(bitPattern: pointer)), "width": 2, "height": 2, "rowBytes": 8])) { free($0) }
+            delivered.signal()
+        }
+        // The main queue is held here, so the reply is queued but not yet sent.
+        delivered.wait()
+        attachment.attached = false
+        XCTAssertTrue(registry.cancelAll().isEmpty)
+        let drained = expectation(description: "main queue drained")
+        DispatchQueue.main.async { drained.fulfill() }
+        wait(for: [drained], timeout: 1)
+        XCTAssertEqual(replies, 0)
+        XCTAssertEqual(freed, 1)
+    }
+
+    func testReplyWhileAttachedIsSentAndNotFreed() {
+        var replies = 0
+        var freed = 0
+        replyOrFree(.success(["pointer": 0x1000]), attached: true, reply: { _ in replies += 1 }) { _ in freed += 1 }
+        XCTAssertEqual(replies, 1)
+        XCTAssertEqual(freed, 0)
+    }
+
     func testAcceptedBufferIsNotFreed() {
         let s = state(12)
         var freed = 0

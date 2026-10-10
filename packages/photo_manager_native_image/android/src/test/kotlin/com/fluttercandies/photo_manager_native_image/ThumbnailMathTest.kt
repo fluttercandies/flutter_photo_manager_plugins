@@ -1,7 +1,9 @@
 package com.fluttercandies.photo_manager_native_image
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ThumbnailMathTest {
@@ -50,5 +52,25 @@ class ThumbnailMathTest {
         assertEquals(90, ThumbnailMath.rotationToApply(90, 0, 0, 512, 384))
         assertEquals(90, ThumbnailMath.rotationToApply(-270, 4000, 3000, 512, 384))
         assertEquals(0, ThumbnailMath.rotationToApply(45, 4000, 3000, 512, 384))
+    }
+
+    @Test
+    fun videoFrameBoxReachesTheShorterSide() {
+        assertEquals(Pair(911, 512), ThumbnailMath.videoFrameBox(1920, 1080, 0, 512, 512))
+        assertEquals(Pair(512, 911), ThumbnailMath.videoFrameBox(1920, 1080, 90, 512, 512))
+        assertEquals(Pair(1921, 1080), ThumbnailMath.videoFrameBox(1920, 1080, 0, 1080, 1080))
+    }
+
+    @Test
+    fun videoFrameBoxNeverUpscales() {
+        assertEquals(Pair(641, 360), ThumbnailMath.videoFrameBox(640, 360, 0, 512, 512))
+        assertNull(ThumbnailMath.videoFrameBox(0, 0, 0, 512, 512))
+    }
+
+    @Test
+    fun coversTargetComparesShorterSides() {
+        assertTrue(ThumbnailMath.coversTarget(910, 512, 512, 512))
+        assertFalse(ThumbnailMath.coversTarget(512, 288, 512, 512))
+        assertFalse(ThumbnailMath.coversTarget(540, 304, 384, 384))
     }
 }

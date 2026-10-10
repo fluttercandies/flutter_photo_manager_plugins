@@ -55,12 +55,12 @@ class NativeImageDecoder(private val context: Context) {
 
     @TargetApi(Build.VERSION_CODES.Q)
     private fun decodeQ(uri: Uri, width: Int, height: Int, isVideo: Boolean): Bitmap {
-        if (isVideo || maxOf(width, height) <= ThumbnailMath.SYSTEM_THUMBNAIL_MAX) {
+        if (maxOf(width, height) <= ThumbnailMath.SYSTEM_THUMBNAIL_MAX) {
             val thumbnail = decodeSystemThumbnail(uri, width, height)
-            if (isVideo || minOf(thumbnail.width, thumbnail.height) >= minOf(width, height)) return thumbnail
+            if (ThumbnailMath.coversTarget(thumbnail.width, thumbnail.height, width, height)) return thumbnail
             thumbnail.recycle()
         }
-        return decodeOriginal(uri, width, height)
+        return if (isVideo) decodeVideoFrame(uri, width, height) else decodeOriginal(uri, width, height)
     }
 
     /**
@@ -108,21 +108,39 @@ class NativeImageDecoder(private val context: Context) {
         else decodeLegacyImage(id, uri, targetShorter)
     }
 
-    /**
-     * Video frames from MINI_KIND thumbnails and MediaMetadataRetriever already
-     * carry the rotation metadata on API 26–28, so no rotation is applied here.
-     */
+    /** MINI_KIND thumbnails already carry the rotation metadata on API 26–28. */
     @Suppress("DEPRECATION")
     private fun decodeLegacyVideo(id: Long, uri: Uri, width: Int, height: Int, targetShorter: Int): Bitmap {
         if (targetShorter <= ThumbnailMath.MINI_KIND_SHORTER) {
-            MediaStore.Video.Thumbnails.getThumbnail(resolver, id, MediaStore.Video.Thumbnails.MINI_KIND, null)
-                ?.let { return it }
+            MediaStore.Video.Thumbnails.getThumbnail(resolver, id, MediaStore.Video.Thumbnails.MINI_KIND, null)?.let {
+                if (ThumbnailMath.coversTarget(it.width, it.height, width, height)) return it
+                it.recycle()
+            }
         }
+        return decodeVideoFrame(uri, width, height)
+    }
+
+    /**
+     * A frame sized from the video's own dimensions, so the shorter side meets
+     * the target. Retriever frames are already upright.
+     */
+    private fun decodeVideoFrame(uri: Uri, width: Int, height: Int): Bitmap {
         val retriever = MediaMetadataRetriever()
         try {
             retriever.setDataSource(context, uri)
-            val frame = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
-                retriever.getScaledFrameAtTime(-1, MediaMetadataRetriever.OPTION_CLOSEST_SYNC, width, height)
+            val box = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+                ThumbnailMath.videoFrameBox(
+                    retriever.intMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH),
+                    retriever.intMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT),
+                    retriever.intMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_ROTATION),
+                    width,
+                    height,
+                )
+            } else {
+                null
+            }
+            val frame = if (box != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+                retriever.getScaledFrameAtTime(-1, MediaMetadataRetriever.OPTION_CLOSEST_SYNC, box.first, box.second)
             } else {
                 retriever.getFrameAtTime(-1, MediaMetadataRetriever.OPTION_CLOSEST_SYNC)
             }
@@ -131,6 +149,9 @@ class NativeImageDecoder(private val context: Context) {
             retriever.release()
         }
     }
+
+    private fun MediaMetadataRetriever.intMetadata(key: Int): Int =
+        extractMetadata(key)?.toIntOrNull() ?: 0
 
     /** Image thumbnails and BitmapFactory decodes ignore EXIF on API 26–28; MediaStore's orientation is applied. */
     @Suppress("DEPRECATION")

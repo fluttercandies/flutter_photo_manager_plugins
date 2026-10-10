@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ffi';
 import 'dart:ui' as ui;
 
@@ -9,6 +10,10 @@ import 'package:photo_manager_native_image/src/native_image_channel.dart';
 import 'package:photo_manager_native_image/src/native_image_request.dart';
 
 import 'fake_channel.dart';
+
+/// Decoding the pixels finishes off the event queue, so tests wait for the
+/// image itself rather than for the queue to drain.
+const Duration _imageTimeout = Duration(seconds: 5);
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -59,19 +64,18 @@ void main() {
   test('a delivered image is kept in the cache', () async {
     final NativeImageProvider p = provider(id: 'b');
     final ImageStream stream = p.resolve(ImageConfiguration.empty);
-    ImageInfo? received;
+    final Completer<ImageInfo> delivered = Completer<ImageInfo>();
     final ImageStreamListener widget =
-        ImageStreamListener((ImageInfo info, _) => received = info);
+        ImageStreamListener((ImageInfo info, _) => delivered.complete(info));
     stream.addListener(widget);
     await Future<void>.delayed(Duration.zero);
     channel.reply(channel.requested.single, allocateBuffer(4, 4));
-    await pumpEventQueue();
-    expect(received, isNotNull);
-    expect(received!.image.width, 4);
+    final ImageInfo received = await delivered.future.timeout(_imageTimeout);
+    expect(received.image.width, 4);
     expect(channel.cancelled, isEmpty);
     expect(PaintingBinding.instance.imageCache.currentSize, 1);
     stream.removeListener(widget);
-    received!.dispose();
+    received.dispose();
   });
 
   test('errors reach the stream as NativeImageException', () async {
@@ -105,10 +109,10 @@ void main() {
   test('an icloud miss is retried and the frame fills the same key', () async {
     final NativeImageProvider p = provider(id: 'e');
     final ImageStream stream = p.resolve(ImageConfiguration.empty);
-    ImageInfo? received;
+    final Completer<ImageInfo> delivered = Completer<ImageInfo>();
     Object? error;
     final ImageStreamListener widget = ImageStreamListener(
-      (ImageInfo info, _) => received = info,
+      (ImageInfo info, _) => delivered.complete(info),
       onError: (Object e, StackTrace? s) => error = e,
     );
     stream.addListener(widget);
@@ -118,28 +122,27 @@ void main() {
     expect(channel.requested, hasLength(2));
     expect(PaintingBinding.instance.imageCache.pendingImageCount, 1);
     channel.reply(channel.requested.last, allocateBuffer(4, 4));
-    await pumpEventQueue();
+    final ImageInfo received = await delivered.future.timeout(_imageTimeout);
     expect(error, isNull);
-    expect(received, isNotNull);
     expect(PaintingBinding.instance.imageCache.currentSize, 1);
     stream.removeListener(widget);
-    received!.dispose();
+    received.dispose();
   });
 
   test('imageCache.clear() while loading does not cancel a visible image',
       () async {
     final NativeImageProvider p = provider(id: 'd');
     final ImageStream stream = p.resolve(ImageConfiguration.empty);
-    ui.Image? received;
-    final ImageStreamListener widget =
-        ImageStreamListener((ImageInfo info, _) => received = info.image);
+    final Completer<ui.Image> delivered = Completer<ui.Image>();
+    final ImageStreamListener widget = ImageStreamListener(
+      (ImageInfo info, _) => delivered.complete(info.image),
+    );
     stream.addListener(widget);
     await Future<void>.delayed(Duration.zero);
     PaintingBinding.instance.imageCache.clear();
     expect(channel.cancelled, isEmpty);
     channel.reply(channel.requested.single, allocateBuffer(4, 4));
-    await pumpEventQueue();
-    expect(received, isNotNull);
+    await delivered.future.timeout(_imageTimeout);
     stream.removeListener(widget);
   });
 }

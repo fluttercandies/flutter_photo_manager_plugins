@@ -35,6 +35,31 @@ object ThumbnailMath {
     }
 
     /**
+     * Box to pass to `MediaMetadataRetriever.getScaledFrameAtTime` so the
+     * frame, which is fitted inside the box, comes out at [scaledSize] of the
+     * upright video. The longer side gets one extra pixel so rounding never
+     * makes the box limit the shorter side.
+     */
+    fun videoFrameBox(
+        videoWidth: Int,
+        videoHeight: Int,
+        rotationDegrees: Int,
+        targetWidth: Int,
+        targetHeight: Int,
+    ): Pair<Int, Int>? {
+        if (videoWidth <= 0 || videoHeight <= 0) return null
+        val quarterTurn = (((rotationDegrees % 360) + 360) % 360) % 180 == 90
+        val width = if (quarterTurn) videoHeight else videoWidth
+        val height = if (quarterTurn) videoWidth else videoHeight
+        val (w, h) = scaledSize(width, height, targetWidth, targetHeight) ?: Pair(width, height)
+        return if (w >= h) Pair(w + 1, h) else Pair(w, h + 1)
+    }
+
+    /** Whether a decoded `width x height` reaches the requested shorter side. */
+    fun coversTarget(width: Int, height: Int, targetWidth: Int, targetHeight: Int): Boolean =
+        min(width, height) >= min(targetWidth, targetHeight)
+
+    /**
      * Power-of-two `BitmapFactory.Options.inSampleSize` that keeps the
      * decoded shorter side at or above `targetShorter`.
      */

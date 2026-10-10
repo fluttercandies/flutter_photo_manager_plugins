@@ -55,10 +55,7 @@ final class NativeImageRequestState {
     @discardableResult
     func deliver(_ result: Result<NativeImageReply?, Error>, free: (UnsafeMutableRawPointer) -> Void) -> Bool {
         if finish(result) { return true }
-        if case .success(let reply?) = result, let address = reply["pointer"],
-           let pointer = UnsafeMutableRawPointer(bitPattern: Int(address)) {
-            free(pointer)
-        }
+        freeBuffer(in: result, free)
         return false
     }
 
@@ -77,6 +74,50 @@ final class NativeImageRequestState {
         lock.unlock()
         completion?(result)
         return true
+    }
+}
+
+/// Whether the engine the plugin serves is still attached. Read and written
+/// on the main thread only.
+final class EngineAttachment {
+    var attached = true
+
+    /// Wraps `reply` so it runs on the main thread and checks the engine
+    /// there, after any detach queued before it. The engine drops a reply
+    /// sent after it detached, so a buffer in such a reply is freed instead.
+    func mainThreadReply(
+        _ reply: @escaping (Result<NativeImageReply?, Error>) -> Void,
+        free: @escaping (UnsafeMutableRawPointer) -> Void = { Foundation.free($0) }
+    ) -> (Result<NativeImageReply?, Error>) -> Void {
+        return { result in
+            DispatchQueue.main.async {
+                replyOrFree(result, attached: self.attached, reply: reply, free: free)
+            }
+        }
+    }
+}
+
+/// Sends `result` if the engine is still attached; otherwise the reply would
+/// be dropped by the engine, so a buffer it carries is freed instead.
+func replyOrFree(
+    _ result: Result<NativeImageReply?, Error>,
+    attached: Bool,
+    reply: (Result<NativeImageReply?, Error>) -> Void,
+    free: (UnsafeMutableRawPointer) -> Void
+) {
+    if attached {
+        reply(result)
+    } else {
+        freeBuffer(in: result, free)
+    }
+}
+
+private func freeBuffer(
+    in result: Result<NativeImageReply?, Error>, _ free: (UnsafeMutableRawPointer) -> Void
+) {
+    if case .success(let reply?) = result, let address = reply["pointer"],
+       let pointer = UnsafeMutableRawPointer(bitPattern: Int(address)) {
+        free(pointer)
     }
 }
 
