@@ -100,8 +100,9 @@ use `controller.textureId` in a `Texture` widget with the same rotation.
    playback reaches the end and cleared by the next `play()`. `seekTo()` is
    clamped to `0`–`duration`.
 5. **`dispose()`.** Releases the player, the texture, and the event
-   subscription, and completes once the platform player is gone. A controller that is disposed while `initialize()` is still
-   in flight disposes the player as soon as it is created.
+   subscription, and completes once the platform player is gone. When
+   `initialize()` is still in flight, the future waits for the player to be
+   created and then released.
 
 Any failure lands in `value.error` with a typed `AssetEntityVideoErrorCode`
 and stops playback. `initialize()` never throws, so a gallery can warm up a
@@ -131,7 +132,7 @@ to the constructor throws an `ArgumentError`.
 | Controls, scrubbing UI, mute policy | App | The controller exposes `play`, `pause`, `seekTo`, `setVolume`, `setLooping`; drawing controls is the app's job. |
 | Error UI | App | Switch on `value.error?.code`. |
 | Audio session and focus | Package, minimal | Android: an audible player takes audio focus, so other audio pauses; a muted player (volume 0) does not. iOS raises the default `.soloAmbient` session to `.playback` once, on the first player, so the silent switch does not mute video; any category the app set is kept. With that default, starting any player on iOS, muted or not, stops other apps' audio, as with `video_player`; an app whose muted previews must not do that sets `.ambient` or `.mixWithOthers` itself. Mixing with other audio, ducking and Now Playing are the app's. |
-| App lifecycle | Package | Playback pauses when the app goes to the background and resumes on return if it was playing. Background playback is not offered. |
+| App lifecycle | Package | Playback pauses when the app goes to the background and resumes on return if it was playing. A `play()` called in the background, or still waiting for initialization when the app leaves, starts on return. Background playback is not offered. |
 | Audio interruptions (calls, other apps) | App | The system pauses playback and `isPlaying` turns false; resuming afterwards is the app's decision. |
 | Asset resolution | Package | MediaStore URI on Android, `PHAsset` lookup on iOS. |
 | Player and texture lifetime | Package | One player per controller; both freed in `dispose()` and on engine detach. |

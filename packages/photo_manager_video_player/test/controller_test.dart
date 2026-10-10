@@ -239,27 +239,226 @@ void main() {
     await controller.dispose();
   });
 
-  test('pauses in the background and resumes on return', () async {
-    final List<MethodCall> calls = _mockPlatform(7);
-    final AssetEntityVideoController controller =
-        AssetEntityVideoController(_video('1'));
-    await controller.initialize();
-    controller.value = controller.value.copyWith(isPlaying: true);
+  group('app lifecycle', () {
     final TestWidgetsFlutterBinding binding =
         TestWidgetsFlutterBinding.instance;
 
-    binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
-    await Future<void>.delayed(Duration.zero);
-    binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
-    await Future<void>.delayed(Duration.zero);
-
-    expect(
-      calls
-          .map((MethodCall c) => c.method)
-          .where((String m) => m == 'pause' || m == 'play'),
-      <String>['pause', 'play'],
+    tearDown(
+      () => binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed),
     );
-    await controller.dispose();
+
+    Future<void> send(int textureId, Map<String, Object?> event) =>
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .handlePlatformMessage(
+          'com.fluttercandies/photo_manager_video_player/events/$textureId',
+          const StandardMethodCodec().encodeSuccessEnvelope(event),
+          null,
+        );
+
+    Iterable<String> playback(List<MethodCall> calls) => calls
+        .map((MethodCall c) => c.method)
+        .where((String m) => m == 'pause' || m == 'play');
+
+    test('pauses in the background and resumes on return', () async {
+      final List<MethodCall> calls = _mockPlatform(7);
+      final AssetEntityVideoController controller =
+          AssetEntityVideoController(_video('1'));
+      await controller.play();
+      await send(7, <String, Object?>{'event': 'playing', 'isPlaying': true});
+
+      binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      await Future<void>.delayed(Duration.zero);
+      binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(playback(calls), <String>['play', 'pause', 'play']);
+      await controller.dispose();
+    });
+
+    test('a play() waiting on initialization does not start in the background',
+        () async {
+      final Completer<int> created = Completer<int>();
+      final List<MethodCall> calls = _mockPlatform(
+        20,
+        onCall: (MethodCall call) =>
+            call.method == 'create' ? created.future : null,
+      );
+      final AssetEntityVideoController controller =
+          AssetEntityVideoController(_video('1'));
+
+      final Future<void> playing = controller.play();
+      await Future<void>.delayed(Duration.zero);
+      binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      created.complete(20);
+      await playing;
+      expect(playback(calls), isEmpty);
+
+      binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await Future<void>.delayed(Duration.zero);
+      expect(playback(calls), <String>['play']);
+      await controller.dispose();
+    });
+
+    test('play() in the background starts on return', () async {
+      final List<MethodCall> calls = _mockPlatform(21);
+      final AssetEntityVideoController controller =
+          AssetEntityVideoController(_video('1'));
+      binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+
+      await controller.play();
+      expect(controller.value.isInitialized, isTrue);
+      expect(playback(calls), isEmpty);
+
+      binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await Future<void>.delayed(Duration.zero);
+      expect(playback(calls), <String>['play']);
+      await controller.dispose();
+    });
+
+    test('pause() in the background cancels the resume', () async {
+      final List<MethodCall> calls = _mockPlatform(22);
+      final AssetEntityVideoController controller =
+          AssetEntityVideoController(_video('1'));
+      await controller.play();
+      await send(22, <String, Object?>{'event': 'playing', 'isPlaying': true});
+
+      binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      await controller.pause();
+      binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(playback(calls), <String>['play', 'pause', 'pause']);
+      await controller.dispose();
+    });
+
+    test('playback the platform paused is not restarted on return', () async {
+      final List<MethodCall> calls = _mockPlatform(24);
+      final AssetEntityVideoController controller =
+          AssetEntityVideoController(_video('1'));
+      await controller.play();
+      // Another app took audio focus, or an iOS interruption, paused it.
+      await send(24, <String, Object?>{'event': 'playing', 'isPlaying': true});
+      await send(24, <String, Object?>{'event': 'playing', 'isPlaying': false});
+
+      binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(playback(calls), <String>['play', 'pause']);
+      await controller.dispose();
+    });
+
+    test('a finished clip is not restarted on return', () async {
+      final List<MethodCall> calls = _mockPlatform(23);
+      final AssetEntityVideoController controller =
+          AssetEntityVideoController(_video('1'));
+      await controller.play();
+      await send(23, <String, Object?>{'event': 'playing', 'isPlaying': true});
+      await send(23, <String, Object?>{'event': 'completed'});
+
+      binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(playback(calls), <String>['play']);
+      await controller.dispose();
+    });
+  });
+
+  group('dispose', () {
+    test('waits for a create in flight and its native release', () async {
+      final Completer<int> created = Completer<int>();
+      final Completer<void> released = Completer<void>();
+      final List<MethodCall> calls = _mockPlatform(
+        30,
+        onCall: (MethodCall call) => switch (call.method) {
+          'create' => created.future,
+          'dispose' => released.future,
+          _ => null,
+        },
+      );
+      final AssetEntityVideoController controller =
+          AssetEntityVideoController(_video('1'));
+      unawaited(controller.initialize());
+      await Future<void>.delayed(Duration.zero);
+
+      bool done = false;
+      final Future<void> disposing =
+          controller.dispose().then((_) => done = true);
+      await pumpEventQueue();
+      expect(done, isFalse);
+
+      created.complete(30);
+      await pumpEventQueue();
+      expect(done, isFalse);
+      expect(
+        calls.where((MethodCall c) => c.method == 'dispose'),
+        hasLength(1),
+      );
+
+      released.complete();
+      await disposing;
+      expect(done, isTrue);
+      expect(
+        calls.where((MethodCall c) => c.method == 'dispose'),
+        hasLength(1),
+      );
+    });
+
+    test('after create waits for the native release', () async {
+      final Completer<void> released = Completer<void>();
+      _mockPlatform(
+        31,
+        onCall: (MethodCall call) => switch (call.method) {
+          'create' => 31,
+          'dispose' => released.future,
+          _ => null,
+        },
+      );
+      final AssetEntityVideoController controller =
+          AssetEntityVideoController(_video('1'));
+      await controller.initialize();
+
+      bool done = false;
+      final Future<void> disposing =
+          controller.dispose().then((_) => done = true);
+      await pumpEventQueue();
+      expect(done, isFalse);
+
+      released.complete();
+      await disposing;
+      expect(done, isTrue);
+    });
+
+    test('during a create that fails completes without a release', () async {
+      final Completer<int> created = Completer<int>();
+      final List<MethodCall> calls = _mockPlatform(
+        32,
+        onCall: (MethodCall call) =>
+            call.method == 'create' ? created.future : null,
+      );
+      final AssetEntityVideoController controller =
+          AssetEntityVideoController(_video('1'));
+      unawaited(controller.initialize());
+      await Future<void>.delayed(Duration.zero);
+
+      final Future<void> disposing = controller.dispose();
+      created.completeError(
+        PlatformException(code: 'assetNotFound', message: 'gone'),
+      );
+      await disposing;
+
+      expect(calls.map((MethodCall c) => c.method), isNot(contains('dispose')));
+    });
+
+    test('called twice returns the same release', () async {
+      _mockPlatform(33);
+      final AssetEntityVideoController controller =
+          AssetEntityVideoController(_video('1'));
+      await controller.initialize();
+
+      expect(identical(controller.dispose(), controller.dispose()), isTrue);
+    });
   });
 
   test('seeking back from the end clears isCompleted', () async {

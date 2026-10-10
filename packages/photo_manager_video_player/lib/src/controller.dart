@@ -88,7 +88,9 @@ String? _asString(Object? value) => value is String ? value : null;
 /// copies a file.
 ///
 /// Playback pauses when the app goes to the background and resumes when it
-/// returns, if it was playing.
+/// returns, if it was playing. A [play] requested while the app is in the
+/// background, or still waiting for initialization when the app leaves,
+/// starts on return instead.
 class AssetEntityVideoController extends ValueNotifier<AssetEntityVideoValue> {
   /// Builds a controller synchronously, seeding size and duration from the
   /// asset so the layout is correct before the first frame exists.
@@ -119,12 +121,20 @@ class AssetEntityVideoController extends ValueNotifier<AssetEntityVideoValue> {
   int? _textureId;
   StreamSubscription<dynamic>? _events;
   Future<void>? _initializing;
+  Future<int>? _creating;
+  Future<void>? _disposing;
   final Completer<void> _ready = Completer<void>();
   bool _disposed = false;
 
   /// Whether the app asked for playback; survives the wait for initialization.
   bool _wantsPlaying = false;
+
+  /// Whether playback starts when the app returns to the foreground.
+  bool _resumeOnReturn = false;
   _LifecycleObserver? _lifecycle;
+
+  static bool get _inBackground =>
+      WidgetsBinding.instance.lifecycleState == AppLifecycleState.paused;
 
   /// The Flutter texture the video is drawn into, once [initialize] has
   /// created the platform player. [AssetEntityVideoView] uses it; draw it
@@ -139,20 +149,19 @@ class AssetEntityVideoController extends ValueNotifier<AssetEntityVideoValue> {
   Future<void> initialize() => _initializing ??= _initialize();
 
   Future<void> _initialize() async {
-    _lifecycle = _LifecycleObserver(this)..attach();
+    _observeLifecycle();
     try {
       final bool looping = value.isLooping;
       final double volume = value.volume;
-      final int id = await AssetEntityVideoPlatform.create(
+      final Future<int> creating = _creating = AssetEntityVideoPlatform.create(
         assetId: asset.id,
         allowNetworkAccess: allowNetworkAccess,
         looping: looping,
         volume: volume,
       );
+      final int id = await creating;
       if (_disposed) {
-        unawaited(
-          AssetEntityVideoPlatform.dispose(id).catchError((Object _) {}),
-        );
+        // dispose() releases this player once the create it awaits returns.
         return;
       }
       _textureId = id;
@@ -194,9 +203,16 @@ class AssetEntityVideoController extends ValueNotifier<AssetEntityVideoValue> {
     }
   }
 
-  /// Starts or resumes playback, initializing the player if needed.
+  /// Starts or resumes playback, initializing the player if needed. In the
+  /// background it only initializes; playback starts when the app returns.
   Future<void> play() async {
     if (_disposed) {
+      return;
+    }
+    _observeLifecycle();
+    if (_inBackground) {
+      _resumeOnReturn = true;
+      await initialize();
       return;
     }
     _wantsPlaying = true;
@@ -208,9 +224,36 @@ class AssetEntityVideoController extends ValueNotifier<AssetEntityVideoValue> {
 
   /// Pauses playback, keeping the surface on the current frame. Before
   /// initialization it only cancels a pending [play].
-  Future<void> pause() async {
+  Future<void> pause() {
+    _resumeOnReturn = false;
+    return _pause();
+  }
+
+  Future<void> _pause() async {
     _wantsPlaying = false;
     await _call(AssetEntityVideoPlatform.pause);
+  }
+
+  void _observeLifecycle() {
+    _lifecycle ??= _LifecycleObserver(this)..attach();
+  }
+
+  void _onBackground() {
+    // Playback the platform already paused (lost audio focus, an
+    // interruption) stays paused on return.
+    final bool active =
+        !value.isInitialized || value.isPlaying || value.isBuffering;
+    _resumeOnReturn = _wantsPlaying && active;
+    if (_wantsPlaying) {
+      _pause();
+    }
+  }
+
+  void _onForeground() {
+    if (_resumeOnReturn) {
+      _resumeOnReturn = false;
+      play();
+    }
   }
 
   /// Moves playback to [position], clamped to the video's duration. Does
@@ -274,6 +317,9 @@ class AssetEntityVideoController extends ValueNotifier<AssetEntityVideoValue> {
       return;
     }
     value = applyPlayerEvent(value, map);
+    if (value.isCompleted) {
+      _wantsPlaying = false;
+    }
     if (value.isInitialized) {
       _markReady();
     }
@@ -281,6 +327,8 @@ class AssetEntityVideoController extends ValueNotifier<AssetEntityVideoValue> {
 
   void _fail(AssetEntityVideoError error) {
     _markReady();
+    _wantsPlaying = false;
+    _resumeOnReturn = false;
     if (_disposed) {
       return;
     }
@@ -299,18 +347,36 @@ class AssetEntityVideoController extends ValueNotifier<AssetEntityVideoValue> {
     }
   }
 
+  /// Releases the platform player. The returned future completes once it is
+  /// gone, including a player whose creation was still in flight.
   @override
-  Future<void> dispose() async {
-    if (_disposed) {
-      return;
+  Future<void> dispose() {
+    final Future<void>? disposing = _disposing;
+    if (disposing != null) {
+      return disposing;
     }
     _disposed = true;
     _wantsPlaying = false;
+    _resumeOnReturn = false;
     _markReady();
     _lifecycle?.detach();
-    await _events?.cancel();
-    final int? id = _textureId;
     super.dispose();
+    return _disposing = _release(_events, _creating);
+  }
+
+  Future<void> _release(
+    StreamSubscription<dynamic>? events,
+    Future<int>? creating,
+  ) async {
+    await events?.cancel();
+    int? id = _textureId;
+    if (id == null && creating != null) {
+      try {
+        id = await creating;
+      } catch (_) {
+        // A failed create left nothing to release.
+      }
+    }
     if (id != null) {
       // The native side may already have dropped the player on an engine
       // detach, and that rejection must not escape into the disposing zone.
@@ -325,7 +391,6 @@ class _LifecycleObserver with WidgetsBindingObserver {
   _LifecycleObserver(this._controller);
 
   final AssetEntityVideoController _controller;
-  bool _wasPlaying = false;
 
   void attach() => WidgetsBinding.instance.addObserver(this);
 
@@ -334,13 +399,9 @@ class _LifecycleObserver with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.paused) {
-      _wasPlaying = _controller.value.isPlaying;
-      if (_wasPlaying) {
-        _controller.pause();
-      }
-    } else if (state == AppLifecycleState.resumed && _wasPlaying) {
-      _wasPlaying = false;
-      _controller.play();
+      _controller._onBackground();
+    } else if (state == AppLifecycleState.resumed) {
+      _controller._onForeground();
     }
   }
 }
