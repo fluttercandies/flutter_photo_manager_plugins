@@ -157,15 +157,29 @@ instead, for example in a grid where downloads should be opt-in.
 
 ## Requirements
 
-| | Declared minimum | Tested on |
+| | Minimum | Checked |
 |---|---|---|
-| Flutter / Dart | 3.29 / 3.3 | 3.44 |
+| Flutter | 3.29 | CI builds a new app with 3.29.3 (APK, iOS through CocoaPods) and with current stable; devices run 3.44 |
+| iOS through Swift Package Manager | Flutter 3.44 | CI builds a new app with 3.44.0 |
 | Android | API 21 (media3-exoplayer 1.4.1) | API 28 and 36 emulators, Galaxy S21 (Android 15) |
 | iOS | 13 | iOS 26.2 simulator, iPhone 14 (iOS 26) |
 
 - Call `PhotoManager.requestPermissionExtend()` before creating a controller;
   the package does not request permission.
-- CocoaPods and Swift Package Manager are both supported on iOS.
+- Flutter 3.29 is the floor because the Android texture relies on
+  `SurfaceProducer.Callback.onSurfaceCleanup`, added in 3.29
+  ([Flutter's migration guide](https://docs.flutter.dev/release/breaking-changes/android-surface-plugins)).
+- Swift Package Manager builds need Flutter 3.44: they depend on the
+  `FlutterFramework` package, which Flutter generates from 3.41, and
+  `photo_manager` 3.12.0 only builds against it from 3.44. On older Flutter,
+  keep the app on CocoaPods with `disable-swift-package-manager: true` under
+  `flutter:` in the app's `pubspec.yaml`.
+
+### Working on this package
+
+The package's own tests need a newer Flutter than apps do: `flutter_lints` 6
+needs Dart 3.8 (Flutter 3.32 or later). The example app's Android Gradle
+Plugin and Gradle versions apply to the example only.
 
 ## Not in scope
 

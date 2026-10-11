@@ -11,3 +11,4 @@
   in the background starts on return instead. `dispose()` completes once the
   platform player is released, even while it is being created. iOS raises an ambient audio
   session to `.playback` on the first player.
+- Flutter 3.29 or later; Swift Package Manager builds need Flutter 3.44.

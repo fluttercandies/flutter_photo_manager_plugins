@@ -99,8 +99,8 @@ jobs:
             cd android && ./gradlew :app:connectedDebugAndroidTest --console=plain
             ./tool/integration_test_android.sh
 
-  ios:
-    name: iOS build (CocoaPods + SwiftPM) + XCTest
+  ios-cocoapods:
+    name: iOS build (CocoaPods) + XCTest
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
@@ -110,9 +110,16 @@ jobs:
         with:
           channel: "stable"
           cache: true
-      - name: Build example (CocoaPods)
+      - name: Build example
         working-directory: ${{ env.PACKAGE_DIR }}/example
-        run: flutter build ios --simulator --debug --no-codesign
+        run: |
+          flutter config --no-enable-swift-package-manager
+          flutter build ios --simulator --debug --no-codesign
+      - name: Check the plugin came through CocoaPods
+        working-directory: ${{ env.PACKAGE_DIR }}/example/ios
+        run: |
+          grep -q photo_manager_video_player Podfile.lock
+          ! grep -qs photo_manager_video_player Flutter/ephemeral/Packages/FlutterGeneratedPluginSwiftPackage/Package.swift
       - name: XCTest
         working-directory: ${{ env.PACKAGE_DIR }}/example/ios
         run: |
@@ -125,8 +132,52 @@ jobs:
           xcodebuild test -workspace Runner.xcworkspace -scheme Runner \
             -destination "id=$UDID" -parallel-testing-enabled NO \
             -only-testing:RunnerTests CODE_SIGNING_ALLOWED=NO
-      - name: Build example (Swift Package Manager)
+
+  ios-swiftpm:
+    name: iOS build (Swift Package Manager)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2
+        with:
+          channel: "stable"
+          cache: true
+      - name: Build example
         working-directory: ${{ env.PACKAGE_DIR }}/example
         run: |
           flutter config --enable-swift-package-manager
           flutter build ios --simulator --debug --no-codesign
+      - name: Check the plugin came through Swift Package Manager
+        working-directory: ${{ env.PACKAGE_DIR }}/example/ios
+        run: |
+          grep -q photo_manager_video_player Flutter/ephemeral/Packages/FlutterGeneratedPluginSwiftPackage/Package.swift
+          ! grep -qs photo_manager_video_player Podfile.lock
+
+  minimum-flutter:
+    name: Minimum Flutter ${{ matrix.flutter }} (${{ matrix.mode }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { flutter: "3.29.3", mode: apk, os: ubuntu-latest }
+          - { flutter: "3.29.3", mode: ios-cocoapods, os: macos-latest }
+          - { flutter: "3.44.0", mode: ios-swiftpm, os: macos-latest }
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - if: matrix.mode == 'apk'
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2
+        with:
+          flutter-version: ${{ matrix.flutter }}
+          channel: "stable"
+          cache: true
+      - name: Build a new app that depends on the package
+        run: ${{ env.PACKAGE_DIR }}/tool/min_consumer.sh ${{ matrix.mode }}
