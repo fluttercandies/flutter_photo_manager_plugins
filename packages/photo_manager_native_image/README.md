@@ -197,11 +197,28 @@ preview, even offline. On Android all MediaStore assets are local.
 
 ## Requirements
 
-- Android `minSdkVersion 26`, iOS 13.
+| | Minimum | Checked in CI |
+|---|---|---|
+| Flutter | 3.24 | A new app built with 3.24.5 (APK, iOS through CocoaPods), and current stable |
+| iOS through Swift Package Manager | Flutter 3.44 | A new app built with 3.44.0, and current stable |
+| Android | API 26 | API 26, 28 and 34 emulators |
+| iOS | 13 | Simulator XCTest |
+
 - Call `PhotoManager.requestPermissionExtend()` before loading; the package
   does not request permission.
-- CocoaPods and Swift Package Manager are both supported on iOS
-  (`darwin/` podspec and `Package.swift`).
+- Swift Package Manager builds need Flutter 3.44: they depend on the
+  `FlutterFramework` package, which Flutter generates from 3.41, and
+  `photo_manager` 3.12.0 only builds against it from 3.44. On older Flutter,
+  keep the app on CocoaPods with `disable-swift-package-manager: true` under
+  `flutter:` in the app's `pubspec.yaml`.
+- Flutter 3.24 is the oldest version checked; an app built with it loads
+  photos and videos on Android 16 and iOS 18.
+
+### Working on this package
+
+The package's own tests and code generation need a newer Flutter than apps
+do: `pigeon` 27 needs `meta` 1.18 (Flutter 3.44 or later). Apps that depend
+on the package do not resolve these tools.
 
 ## Public API
 

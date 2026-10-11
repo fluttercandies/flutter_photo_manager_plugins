@@ -15,7 +15,9 @@
   on API 29+, decoded to the requested size in sRGB,
   `MediaStore.*.Thumbnails` and `BitmapFactory` with orientation correction on
   API 26–28, JNI `malloc` buffers. Video thumbnails smaller than the request
-  fall back to a `MediaMetadataRetriever` frame sized from the video.
+  fall back to a `MediaMetadataRetriever` frame sized from the video, and an
+  unreadable cached system thumbnail falls back to the source.
+- Flutter 3.24 or later; Swift Package Manager builds need Flutter 3.44.
 - Decoded pixels capped at `size² × 4`, so panoramas stay bounded.
 - Cancellation that recognises the `ImageCache` listener, so scrolled-away
   cells stop their native work without false cancels on `imageCache.clear()`.
