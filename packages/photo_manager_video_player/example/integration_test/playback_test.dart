@@ -115,9 +115,7 @@ void main() {
       ),
     );
     await _until(controller, (AssetEntityVideoValue v) => v.firstFrameRendered);
-    for (final (int ms, int expected) in <(int, int)>[(1700, 255), (2200, 0)]) {
-      await controller.seekTo(Duration(milliseconds: ms));
-      await Future<void>.delayed(const Duration(milliseconds: 800));
+    Future<int> centreGreen() async {
       await tester.pump(const Duration(milliseconds: 100));
       final ui.Image image = await (key.currentContext!.findRenderObject()!
               as RenderRepaintBoundary)
@@ -125,11 +123,20 @@ void main() {
       final ByteData bytes =
           (await image.toByteData(format: ui.ImageByteFormat.rawRgba))!;
       final int o = ((image.height ~/ 2) * image.width + image.width ~/ 2) * 4;
-      expect(
-        bytes.getUint8(o + 1),
-        closeTo(expected, 30),
-        reason: 'green channel at $ms ms',
-      );
+      return bytes.getUint8(o + 1);
+    }
+
+    for (final (int ms, int expected) in <(int, int)>[(1700, 255), (2200, 0)]) {
+      await controller.seekTo(Duration(milliseconds: ms));
+      // Decoding from the only keyframe can be slow on CI emulators; a wrong
+      // frame never matches, so wait for the right one with a bound.
+      final Stopwatch waited = Stopwatch()..start();
+      int green = await centreGreen();
+      while ((green - expected).abs() > 30 && waited.elapsed.inSeconds < 5) {
+        await Future<void>.delayed(const Duration(milliseconds: 200));
+        green = await centreGreen();
+      }
+      expect(green, closeTo(expected, 30), reason: 'green channel at $ms ms');
     }
     await tester.pumpWidget(const SizedBox());
     await controller.dispose();

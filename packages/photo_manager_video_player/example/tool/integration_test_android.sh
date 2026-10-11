@@ -11,4 +11,7 @@ cd "$(dirname "$0")/.."
     sleep 2
   done
 ) &
+GRANTS=$!
+# The grant loop would otherwise keep the CI step open after the tests end.
+trap 'kill $GRANTS 2>/dev/null' EXIT
 flutter test integration_test/playback_test.dart -d "${1:-emulator-5554}" --timeout 120s
