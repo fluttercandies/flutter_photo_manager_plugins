@@ -2,9 +2,11 @@ package com.fluttercandies.photo_manager_video_player
 
 import android.content.ContentUris
 import android.content.Context
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.provider.MediaStore
+import android.view.Surface
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
@@ -21,22 +23,22 @@ import io.flutter.view.TextureRegistry
 import java.io.FileNotFoundException
 
 /**
- * Owns one ExoPlayer fed straight from a MediaStore `content://` URI, drawing
- * into a Flutter texture — so nothing is copied into the app sandbox, and
- * Flutter composites the video like any other widget.
+ * Owns one ExoPlayer fed straight from a MediaStore `content://` URI, so
+ * nothing is copied into the app sandbox. With a [surface] it draws into a
+ * Flutter texture; without one it waits for a [PlatformVideoView] to attach a
+ * SurfaceView, which keeps HDR video on its own display layer.
  */
 class GalleryVideoPlayer(
     context: Context,
     messenger: BinaryMessenger,
-    private val surface: TextureRegistry.SurfaceProducer,
+    private val surface: TextureRegistry.SurfaceProducer?,
+    val playerId: Long,
     private val assetId: String,
     initialLooping: Boolean,
     initialVolume: Double,
 ) {
-    val textureId: Long = surface.id()
-
     private val events =
-        EventChannel(messenger, "${PhotoManagerVideoPlayerPlugin.CHANNEL_NAME}/events/$textureId")
+        EventChannel(messenger, "${PhotoManagerVideoPlayerPlugin.CHANNEL_NAME}/events/$playerId")
     private var sink: EventChannel.EventSink? = null
 
     private val mainHandler = Handler(Looper.getMainLooper())
@@ -48,7 +50,7 @@ class GalleryVideoPlayer(
     private val playerListener = object : Player.Listener {
         override fun onVideoSizeChanged(videoSize: VideoSize) {
             if (videoSize.width <= 0 || videoSize.height <= 0) return
-            surface.setSize(videoSize.width, videoSize.height)
+            surface?.setSize(videoSize.width, videoSize.height)
             emit(
                 "videoSize",
                 mapOf(
@@ -56,7 +58,8 @@ class GalleryVideoPlayer(
                     "height" to videoSize.height,
                     "rotationDegrees" to rotationForDart(
                         exoPlayer.videoFormat?.rotationDegrees ?: 0,
-                        surface.handlesCropAndRotation(),
+                        // The decoder rotates frames written to a SurfaceView.
+                        surface?.handlesCropAndRotation() ?: true,
                     ),
                 ),
             )
@@ -101,13 +104,13 @@ class GalleryVideoPlayer(
             applyAudioFocus()
             repeatMode = if (initialLooping) Player.REPEAT_MODE_ONE else Player.REPEAT_MODE_OFF
             addListener(playerListener)
-            setVideoSurface(surface.surface)
+            if (surface != null) setVideoSurface(surface.surface)
         }
 
     init {
         // Android can reclaim the surface while the app is backgrounded; the
         // player has to be re-attached to the new one on the way back.
-        surface.setCallback(object : TextureRegistry.SurfaceProducer.Callback {
+        surface?.setCallback(object : TextureRegistry.SurfaceProducer.Callback {
             override fun onSurfaceAvailable() {
                 if (!released) exoPlayer.setVideoSurface(surface.surface)
             }
@@ -141,6 +144,23 @@ class GalleryVideoPlayer(
         val uri = ContentUris.withAppendedId(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, id)
         exoPlayer.setMediaItem(MediaItem.fromUri(uri))
         exoPlayer.prepare()
+    }
+
+    /** Draws into a platform view's surface; called each time it is (re)created. */
+    fun attachSurface(target: Surface) {
+        if (released || !target.isValid) return
+        exoPlayer.setVideoSurface(target)
+        // Android 9 decoders keep the old output when a surface arrives while
+        // paused, leaving the view blank until a seek flushes them.
+        if (Build.VERSION.SDK_INT == Build.VERSION_CODES.P && !exoPlayer.playWhenReady) {
+            val position = exoPlayer.currentPosition
+            exoPlayer.seekTo(if (position == 0L) 1L else position)
+        }
+    }
+
+    /** Stops drawing into [target], unless another view has already taken over. */
+    fun detachSurface(target: Surface) {
+        if (!released) exoPlayer.clearVideoSurface(target)
     }
 
     fun play() {
@@ -179,7 +199,7 @@ class GalleryVideoPlayer(
         stopPositionUpdates()
         exoPlayer.removeListener(playerListener)
         exoPlayer.release()
-        surface.release()
+        surface?.release()
         events.setStreamHandler(null)
         sink = null
     }

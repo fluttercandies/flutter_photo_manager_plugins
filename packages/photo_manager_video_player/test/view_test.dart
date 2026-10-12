@@ -2,6 +2,7 @@
 // Use of this source code is governed by an Apache license that can be found
 // in the LICENSE file.
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -19,17 +20,25 @@ AssetEntity _video() => AssetEntity(
       duration: 6,
     );
 
-/// Answers `create` with texture 1 and replays [events] once Dart listens.
-void _mockPlatform(List<Map<String, Object?>> events) {
+/// Answers `create` with player [id] and replays [events] once Dart listens.
+/// Returns the `create` calls.
+List<MethodCall> _mockPlatform(
+  List<Map<String, Object?>> events, {
+  int id = 1,
+}) {
+  final List<MethodCall> creates = <MethodCall>[];
   final TestDefaultBinaryMessenger messenger =
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
-  const String eventChannel = '$_name/events/1';
+  final String eventChannel = '$_name/events/$id';
 
-  messenger.setMockMethodCallHandler(
-    _channel,
-    (MethodCall call) async => call.method == 'create' ? 1 : null,
-  );
-  messenger.setMockMethodCallHandler(const MethodChannel(eventChannel), (
+  messenger.setMockMethodCallHandler(_channel, (MethodCall call) async {
+    if (call.method != 'create') {
+      return null;
+    }
+    creates.add(call);
+    return id;
+  });
+  messenger.setMockMethodCallHandler(MethodChannel(eventChannel), (
     MethodCall call,
   ) async {
     if (call.method != 'listen') {
@@ -46,8 +55,9 @@ void _mockPlatform(List<Map<String, Object?>> events) {
   });
   addTearDown(() {
     messenger.setMockMethodCallHandler(_channel, null);
-    messenger.setMockMethodCallHandler(const MethodChannel(eventChannel), null);
+    messenger.setMockMethodCallHandler(MethodChannel(eventChannel), null);
   });
+  return creates;
 }
 
 Future<AssetEntityVideoController> _ready(
@@ -119,5 +129,84 @@ void main() {
 
     expect(tester.widget<RotatedBox>(find.byType(RotatedBox)).quarterTurns, 1);
     expect(controller.value.size, const Size(1080, 1920));
+  });
+
+  group('platformView', () {
+    const Map<String, Object?> quarterTurned = <String, Object?>{
+      'event': 'videoSize',
+      'width': 1080,
+      'height': 1920,
+      'rotationDegrees': 90,
+    };
+
+    Future<(AssetEntityVideoController, List<MethodCall>)> ready() async {
+      final List<MethodCall> creates = _mockPlatform(
+        <Map<String, Object?>>[
+          <String, Object?>{'event': 'initialized', 'durationMs': 6000},
+          quarterTurned,
+        ],
+        id: -1,
+      );
+      final AssetEntityVideoController controller = AssetEntityVideoController(
+        _video(),
+        viewType: AssetEntityVideoViewType.platformView,
+      );
+      await controller.initialize();
+      addTearDown(controller.dispose);
+      return (controller, creates);
+    }
+
+    testWidgets('Android shows a SurfaceView without a Dart rotation', (
+      WidgetTester tester,
+    ) async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.android;
+      final (AssetEntityVideoController controller, List<MethodCall> creates) =
+          await ready();
+
+      await tester.pumpWidget(AssetEntityVideoView(controller));
+
+      expect(
+        (creates.single.arguments as Map<Object?, Object?>)['viewType'],
+        'platformView',
+      );
+      expect(controller.usesPlatformView, isTrue);
+      expect(controller.textureId, isNull);
+      final PlatformViewLink link =
+          tester.widget<PlatformViewLink>(find.byType(PlatformViewLink));
+      expect(link.viewType, '$_name/view');
+      expect(find.byType(Texture), findsNothing);
+      expect(find.byType(RotatedBox), findsNothing);
+      expect(controller.value.size, const Size(1080, 1920));
+      debugDefaultTargetPlatformOverride = null;
+    });
+
+    testWidgets('other platforms keep the texture', (
+      WidgetTester tester,
+    ) async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+      final (AssetEntityVideoController controller, List<MethodCall> creates) =
+          await ready();
+
+      await tester.pumpWidget(AssetEntityVideoView(controller));
+
+      expect(
+        (creates.single.arguments as Map<Object?, Object?>)
+            .containsKey('viewType'),
+        isFalse,
+      );
+      expect(controller.usesPlatformView, isFalse);
+      expect(controller.textureId, -1);
+      expect(find.byType(PlatformViewLink), findsNothing);
+      expect(find.byType(Texture), findsOneWidget);
+      debugDefaultTargetPlatformOverride = null;
+    });
+  });
+
+  test('the texture stays the default', () {
+    final AssetEntityVideoController controller = AssetEntityVideoController(
+      _video(),
+    );
+    addTearDown(controller.dispose);
+    expect(controller.viewType, AssetEntityVideoViewType.textureView);
   });
 }

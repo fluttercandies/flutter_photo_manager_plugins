@@ -30,6 +30,7 @@ class GalleryPage extends StatefulWidget {
 class _GalleryPageState extends State<GalleryPage> {
   List<AssetEntity>? _videos;
   String? _errorText;
+  AssetEntityVideoViewType _viewType = AssetEntityVideoViewType.textureView;
 
   @override
   void initState() {
@@ -67,7 +68,29 @@ class _GalleryPageState extends State<GalleryPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Gallery videos')),
+      appBar: AppBar(
+        title: const Text('Gallery videos'),
+        actions: <Widget>[
+          // Android only: a SurfaceView keeps HDR video on its own layer.
+          SegmentedButton<AssetEntityVideoViewType>(
+            segments: const <ButtonSegment<AssetEntityVideoViewType>>[
+              ButtonSegment<AssetEntityVideoViewType>(
+                value: AssetEntityVideoViewType.textureView,
+                label: Text('Texture'),
+              ),
+              ButtonSegment<AssetEntityVideoViewType>(
+                value: AssetEntityVideoViewType.platformView,
+                label: Text('Platform view'),
+              ),
+            ],
+            selected: <AssetEntityVideoViewType>{_viewType},
+            showSelectedIcon: false,
+            onSelectionChanged: (Set<AssetEntityVideoViewType> selected) =>
+                setState(() => _viewType = selected.single),
+          ),
+          const SizedBox(width: 8),
+        ],
+      ),
       body: _buildBody(),
     );
   }
@@ -97,7 +120,7 @@ class _GalleryPageState extends State<GalleryPage> {
           asset: asset,
           onTap: () => Navigator.of(context).push(
             MaterialPageRoute<void>(
-              builder: (_) => VideoPage(asset: asset),
+              builder: (_) => VideoPage(asset: asset, viewType: _viewType),
             ),
           ),
         );
@@ -141,11 +164,16 @@ class _VideoThumbnail extends StatelessWidget {
 }
 
 /// Plays one asset with [AssetEntityVideoController] — no copy first, either
-/// platform. The poster thumbnail cross-fades out on `firstFrameRendered`.
+/// platform. A black cover fades out on `firstFrameRendered`.
 class VideoPage extends StatefulWidget {
-  const VideoPage({super.key, required this.asset});
+  const VideoPage({
+    super.key,
+    required this.asset,
+    this.viewType = AssetEntityVideoViewType.textureView,
+  });
 
   final AssetEntity asset;
+  final AssetEntityVideoViewType viewType;
 
   @override
   State<VideoPage> createState() => _VideoPageState();
@@ -153,7 +181,7 @@ class VideoPage extends StatefulWidget {
 
 class _VideoPageState extends State<VideoPage> {
   late final AssetEntityVideoController _controller =
-      AssetEntityVideoController(widget.asset);
+      AssetEntityVideoController(widget.asset, viewType: widget.viewType);
 
   @override
   void initState() {
@@ -190,10 +218,16 @@ class _VideoPageState extends State<VideoPage> {
               child: Stack(
                 fit: StackFit.expand,
                 children: <Widget>[
-                  AnimatedOpacity(
-                    opacity: value.firstFrameRendered ? 1 : 0,
-                    duration: const Duration(milliseconds: 150),
-                    child: AssetEntityVideoView(_controller),
+                  AssetEntityVideoView(_controller),
+                  // Covers the video instead of hiding it: a platform view
+                  // under a zero opacity is never composited, so its first
+                  // frame would never arrive.
+                  IgnorePointer(
+                    child: AnimatedOpacity(
+                      opacity: value.firstFrameRendered ? 0 : 1,
+                      duration: const Duration(milliseconds: 150),
+                      child: const ColoredBox(color: Colors.black),
+                    ),
                   ),
                   if (value.isBuffering)
                     const Center(child: CircularProgressIndicator()),

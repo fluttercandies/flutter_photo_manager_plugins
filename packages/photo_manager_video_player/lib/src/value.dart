@@ -5,6 +5,23 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/painting.dart' show Size;
 
+/// How [AssetEntityVideoView] puts the video on screen.
+enum AssetEntityVideoViewType {
+  /// A Flutter texture, composited like any other widget.
+  textureView,
+
+  /// An Android `SurfaceView` embedded as a platform view. Android only;
+  /// other platforms fall back to [textureView].
+  ///
+  /// The video stays on its own display layer, so HDR video is shown with the
+  /// system's HDR handling instead of being flattened into the 8-bit sRGB
+  /// Flutter layer. In return it composites like a platform view: transforms
+  /// and clipping cost more, and opacity may not apply. Keep the view painted
+  /// until `firstFrameRendered` — under a zero opacity it is not composited,
+  /// so its surface, and the first frame, never arrive. Cover it instead.
+  platformView,
+}
+
 /// Why playback could not start or continue.
 ///
 /// Only cases a gallery UI has to branch on are exposed as codes; everything
@@ -98,7 +115,8 @@ class AssetEntityVideoValue {
   /// Clockwise quarter turn the raw texture needs to be upright (0, 90, 180,
   /// 270). [AssetEntityVideoView] applies it; [size] is already the upright
   /// size. Only needed when drawing `AssetEntityVideoController.textureId`
-  /// yourself.
+  /// yourself. Always 0 for [AssetEntityVideoViewType.platformView], whose
+  /// frames the decoder already rotates.
   final int rotationCorrection;
 
   /// True once a frame has actually reached the platform surface — the signal

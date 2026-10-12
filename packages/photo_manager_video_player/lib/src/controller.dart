@@ -81,6 +81,10 @@ AssetEntityVideoValue applyPlayerEvent(
 
 String? _asString(Object? value) => value is String ? value : null;
 
+/// The platform player [controller] shows, once created — a texture id, or
+/// the id an Android platform view is created with.
+int? playerIdOf(AssetEntityVideoController controller) => controller._playerId;
+
 /// Plays a video that lives in the photo library, without copying the original.
 ///
 /// Android resolves the asset to a MediaStore `content://` URI and hands it to
@@ -96,8 +100,11 @@ class AssetEntityVideoController extends ValueNotifier<AssetEntityVideoValue> {
   /// asset so the layout is correct before the first frame exists.
   ///
   /// Throws an [ArgumentError] when [asset] is not a video.
-  AssetEntityVideoController(this.asset, {this.allowNetworkAccess = true})
-      : super(
+  AssetEntityVideoController(
+    this.asset, {
+    this.allowNetworkAccess = true,
+    this.viewType = AssetEntityVideoViewType.textureView,
+  }) : super(
           AssetEntityVideoValue(
             size: asset.orientatedSize,
             duration: asset.videoDuration,
@@ -118,7 +125,17 @@ class AssetEntityVideoController extends ValueNotifier<AssetEntityVideoValue> {
   /// [AssetEntityVideoErrorCode.iCloudUnavailable] instead.
   final bool allowNetworkAccess;
 
-  int? _textureId;
+  /// How [AssetEntityVideoView] shows the video. Fixed for the controller's
+  /// life, since the platform player is built for one or the other.
+  final AssetEntityVideoViewType viewType;
+
+  /// Whether the video is shown through an Android platform view; [viewType]
+  /// falls back to a texture elsewhere.
+  bool get usesPlatformView =>
+      viewType == AssetEntityVideoViewType.platformView &&
+      defaultTargetPlatform == TargetPlatform.android;
+
+  int? _playerId;
   StreamSubscription<dynamic>? _events;
   Future<void>? _initializing;
   Future<int>? _creating;
@@ -139,7 +156,8 @@ class AssetEntityVideoController extends ValueNotifier<AssetEntityVideoValue> {
   /// The Flutter texture the video is drawn into, once [initialize] has
   /// created the platform player. [AssetEntityVideoView] uses it; draw it
   /// yourself with a `Texture` widget and [AssetEntityVideoValue.rotationCorrection].
-  int? get textureId => _textureId;
+  /// Always null when [usesPlatformView].
+  int? get textureId => usesPlatformView ? null : _playerId;
 
   /// Creates the platform player and completes once it reports its metadata,
   /// so `value.duration` and `value.size` are exact when this returns.
@@ -158,15 +176,16 @@ class AssetEntityVideoController extends ValueNotifier<AssetEntityVideoValue> {
         allowNetworkAccess: allowNetworkAccess,
         looping: looping,
         volume: volume,
+        platformView: usesPlatformView,
       );
       final int id = await creating;
       if (_disposed) {
         // dispose() releases this player once the create it awaits returns.
         return;
       }
-      _textureId = id;
-      // textureId isn't part of `value`, so assigning it alone wouldn't reach
-      // a ValueListenableBuilder — the Texture widget would never mount.
+      _playerId = id;
+      // The player id isn't part of `value`, so assigning it alone wouldn't
+      // reach a ValueListenableBuilder — the view would never mount.
       notifyListeners();
       _events = AssetEntityVideoPlatform.events(id).listen(
         _onEvent,
@@ -296,7 +315,7 @@ class AssetEntityVideoController extends ValueNotifier<AssetEntityVideoValue> {
 
   /// Sends [action] to an existing player; a no-op before initialization.
   Future<void> _call(Future<void> Function(int textureId) action) async {
-    final int? id = _textureId;
+    final int? id = _playerId;
     if (id == null || _disposed) {
       return;
     }
@@ -369,7 +388,7 @@ class AssetEntityVideoController extends ValueNotifier<AssetEntityVideoValue> {
     Future<int>? creating,
   ) async {
     await events?.cancel();
-    int? id = _textureId;
+    int? id = _playerId;
     if (id == null && creating != null) {
       try {
         id = await creating;

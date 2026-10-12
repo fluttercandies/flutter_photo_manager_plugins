@@ -5,6 +5,6 @@
 /// Play `photo_manager` gallery videos without copying the original file.
 library;
 
-export 'src/controller.dart' hide applyPlayerEvent;
+export 'src/controller.dart' hide applyPlayerEvent, playerIdOf;
 export 'src/value.dart';
 export 'src/view.dart';

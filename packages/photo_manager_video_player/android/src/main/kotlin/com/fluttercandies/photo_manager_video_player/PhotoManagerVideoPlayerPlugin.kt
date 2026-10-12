@@ -16,6 +16,9 @@ class PhotoManagerVideoPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHan
 
     private val players = mutableMapOf<Long, GalleryVideoPlayer>()
 
+    // Texture ids count up from 0, so platform-view players count down from -1.
+    private var nextPlatformViewPlayerId = -1L
+
     /** Players the engine still owns; read by the engine-teardown test. */
     val playerCount: Int get() = players.size
 
@@ -23,6 +26,10 @@ class PhotoManagerVideoPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHan
         context = binding.applicationContext
         messenger = binding.binaryMessenger
         textures = binding.textureRegistry
+        binding.platformViewRegistry.registerViewFactory(
+            VIEW_TYPE,
+            PlatformVideoViewFactory { players[it] },
+        )
         channel = MethodChannel(messenger, CHANNEL_NAME)
         channel.setMethodCallHandler(this)
     }
@@ -48,16 +55,22 @@ class PhotoManagerVideoPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHan
         if (call.method == "create") {
             val assetId = call.argument<String>("assetId")
                 ?: return result.error("playbackFailed", "Missing 'assetId'.", null)
+            val surface = if (call.argument<String>("viewType") == "platformView") {
+                null
+            } else {
+                textures.createSurfaceProducer()
+            }
             val player = GalleryVideoPlayer(
                 context = context,
                 messenger = messenger,
-                surface = textures.createSurfaceProducer(),
+                surface = surface,
+                playerId = surface?.id() ?: nextPlatformViewPlayerId--,
                 assetId = assetId,
                 initialLooping = call.argument<Boolean>("looping") ?: false,
                 initialVolume = call.argument<Double>("volume") ?: 1.0,
             )
-            players[player.textureId] = player
-            return result.success(player.textureId)
+            players[player.playerId] = player
+            return result.success(player.playerId)
         }
 
         val textureId = call.argument<Number>("textureId")?.toLong()
@@ -78,5 +91,6 @@ class PhotoManagerVideoPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHan
 
     companion object {
         const val CHANNEL_NAME = "com.fluttercandies/photo_manager_video_player"
+        const val VIEW_TYPE = "$CHANNEL_NAME/view"
     }
 }

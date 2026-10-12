@@ -22,6 +22,7 @@ class AssetEntityVideoPlatform {
     required bool allowNetworkAccess,
     required bool looping,
     required double volume,
+    required bool platformView,
   }) async {
     if (!_restartCleanupDone) {
       _restartCleanupDone = true;
@@ -35,6 +36,7 @@ class AssetEntityVideoPlatform {
       'allowNetworkAccess': allowNetworkAccess,
       'looping': looping,
       'volume': volume,
+      if (platformView) 'viewType': 'platformView',
     });
     if (id == null) {
       throw PlatformException(
@@ -72,6 +74,10 @@ class AssetEntityVideoPlatform {
       ...args,
     });
   }
+
+  /// The Android platform view type that shows a player created with
+  /// `platformView`.
+  static const String viewType = '$_name/view';
 
   static Stream<dynamic> events(int textureId) =>
       EventChannel('$_name/events/$textureId').receiveBroadcastStream();
