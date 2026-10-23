@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="330" viewBox="0 0 960 330" font-family="-apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="13">
+  <defs>
+    <style>
+      .col{fill:#fff;stroke:#d0d7de;rx:8}
+      .h{fill:#24292f;font-size:15px;font-weight:600;text-anchor:middle}
+      .box{stroke-width:1.2;rx:6}
+      .app{fill:#eef2ff;stroke:#4c5fd5}
+      .pkg{fill:#e6f4ea;stroke:#1a7f37}
+      .nat{fill:#fff8e1;stroke:#b08800}
+      .t{fill:#24292f;text-anchor:middle}
+      .s{fill:#57606a;font-size:11px;text-anchor:middle}
+    </style>
+  </defs>
+
+  <rect x="20" y="20" width="440" height="290" class="col"/>
+  <text x="240" y="50" class="h">App</text>
+
+  <rect x="40" y="70" width="400" height="44" class="box app"/>
+  <text x="240" y="90" class="t">Thumbnail sizes</text>
+  <text x="240" y="106" class="s">how many, which pixels, per column count</text>
+
+  <rect x="40" y="126" width="400" height="44" class="box app"/>
+  <text x="240" y="146" class="t">How many requests are in flight</text>
+  <text x="240" y="162" class="s">cacheExtent, when to switch layout, prefetch or not</text>
+
+  <rect x="40" y="182" width="400" height="44" class="box app"/>
+  <text x="240" y="202" class="t">ImageCache budget</text>
+  <text x="240" y="218" class="s">maximumSize, maximumSizeBytes, clear() policy</text>
+
+  <rect x="40" y="238" width="400" height="44" class="box app"/>
+  <text x="240" y="258" class="t">Error UI</text>
+  <text x="240" y="274" class="s">errorBuilder, iCloud placeholder, disk cache</text>
+
+  <rect x="500" y="20" width="440" height="290" class="col"/>
+  <text x="720" y="50" class="h">photo_manager_native_image</text>
+
+  <rect x="520" y="70" width="400" height="44" class="box pkg"/>
+  <text x="720" y="90" class="t">Cache key</text>
+  <text x="720" y="106" class="s">id, modified date, size, isVideo</text>
+
+  <rect x="520" y="126" width="400" height="44" class="box pkg"/>
+  <text x="720" y="146" class="t">Cancellation</text>
+  <text x="720" y="162" class="s">only when nobody but the cache is waiting</text>
+
+  <rect x="520" y="182" width="400" height="44" class="box nat"/>
+  <text x="720" y="202" class="t">Native worker queues</text>
+  <text x="720" y="218" class="s">local: cores × 2 · network: 2</text>
+
+  <rect x="520" y="238" width="400" height="44" class="box nat"/>
+  <text x="720" y="258" class="t">Buffer lifetime and iCloud fallback</text>
+  <text x="720" y="274" class="s">one reply per attempt, freed by Dart · local then network</text>
+</svg>
