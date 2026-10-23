@@ -47,6 +47,9 @@ jobs:
         run: dart format packages --output=none --set-exit-if-changed
       - name: Analyze packages
         run: melos exec --scope="photo_manager_*" -- flutter analyze lib
+      - name: Test image provider error handling
+        working-directory: packages/photo_manager_image_provider
+        run: flutter test
       - name: Dry run docs generate
         run: melos exec --scope="photo_manager_*" -- dart doc --dry-run .
         continue-on-error: true

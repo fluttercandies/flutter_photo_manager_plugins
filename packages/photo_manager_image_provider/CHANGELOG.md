@@ -1,3 +1,7 @@
+## Unreleased
+
+- Fix asynchronous decoder errors bypassing image-provider error reporting and cache eviction.
+
 ## 2.2.0
 
 - **FEAT**: Make file type of the image provider asynchronized.
