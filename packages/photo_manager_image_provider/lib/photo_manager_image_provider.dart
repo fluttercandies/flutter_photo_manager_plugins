@@ -154,7 +154,7 @@ class AssetEntityImageProvider extends ImageProvider<AssetEntityImageProvider> {
           throw StateError('The data of the entity is null: $entity');
         }
         final buffer = await ui.ImmutableBuffer.fromUint8List(data);
-        return decode(buffer);
+        return await decode(buffer);
       } catch (e, s) {
         if (kDebugMode) {
           FlutterError.presentError(
