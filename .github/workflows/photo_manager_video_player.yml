@@ -1,0 +1,184 @@
+name: photo_manager_video_player
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "packages/photo_manager_video_player/**"
+      - ".github/workflows/photo_manager_video_player.yml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "packages/photo_manager_video_player/**"
+      - ".github/workflows/photo_manager_video_player.yml"
+
+permissions: {}
+
+env:
+  PACKAGE_DIR: packages/photo_manager_video_player
+
+jobs:
+  dart:
+    name: Dart tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2
+        with:
+          channel: "stable"
+          cache: true
+      - name: Test
+        working-directory: ${{ env.PACKAGE_DIR }}
+        run: flutter test
+
+  android:
+    name: Android build + JVM tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2
+        with:
+          channel: "stable"
+          cache: true
+      - name: Build example (Kotlin)
+        working-directory: ${{ env.PACKAGE_DIR }}/example
+        run: flutter build apk --debug
+      - name: JUnit
+        working-directory: ${{ env.PACKAGE_DIR }}/example/android
+        run: ./gradlew :photo_manager_video_player:testDebugUnitTest --console=plain
+
+  instrumented:
+    name: Android device tests (API ${{ matrix.api-level }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        api-level: [28, 34]
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2
+        with:
+          channel: "stable"
+          cache: true
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Generate Gradle project
+        working-directory: ${{ env.PACKAGE_DIR }}/example
+        run: flutter build apk --config-only
+      - uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d
+        with:
+          api-level: ${{ matrix.api-level }}
+          target: google_apis
+          arch: x86_64
+          disable-animations: true
+          working-directory: ${{ env.PACKAGE_DIR }}/example
+          script: |
+            cd android && ./gradlew :app:connectedDebugAndroidTest --console=plain
+            ./tool/integration_test_android.sh
+
+  ios-cocoapods:
+    name: iOS build (CocoaPods) + XCTest
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2
+        with:
+          channel: "stable"
+          cache: true
+      - name: Build example
+        working-directory: ${{ env.PACKAGE_DIR }}/example
+        run: |
+          flutter config --no-enable-swift-package-manager
+          flutter build ios --simulator --debug --no-codesign
+      - name: Check the plugin came through CocoaPods
+        working-directory: ${{ env.PACKAGE_DIR }}/example/ios
+        run: |
+          grep -q photo_manager_video_player Podfile.lock
+          ! grep -qs photo_manager_video_player Flutter/ephemeral/Packages/FlutterGeneratedPluginSwiftPackage/Package.swift
+      - name: XCTest
+        working-directory: ${{ env.PACKAGE_DIR }}/example/ios
+        run: |
+          set -e
+          UDID=$(xcrun simctl list devices available -j | python3 -c '
+          import json, sys
+          devices = json.load(sys.stdin)["devices"]
+          print(next(d["udid"] for runtime, ds in sorted(devices.items(), reverse=True)
+                     if "iOS" in runtime for d in ds if d["name"].startswith("iPhone")))')
+          xcodebuild test -workspace Runner.xcworkspace -scheme Runner \
+            -destination "id=$UDID" -parallel-testing-enabled NO \
+            -only-testing:RunnerTests CODE_SIGNING_ALLOWED=NO
+
+  ios-swiftpm:
+    name: iOS build (Swift Package Manager)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2
+        with:
+          channel: "stable"
+          cache: true
+      - name: Build example
+        working-directory: ${{ env.PACKAGE_DIR }}/example
+        run: |
+          flutter config --enable-swift-package-manager
+          flutter build ios --simulator --debug --no-codesign
+      - name: Check the plugin came through Swift Package Manager
+        working-directory: ${{ env.PACKAGE_DIR }}/example/ios
+        run: |
+          grep -q photo_manager_video_player Flutter/ephemeral/Packages/FlutterGeneratedPluginSwiftPackage/Package.swift
+          ! grep -qs photo_manager_video_player Podfile.lock
+
+  minimum-flutter:
+    name: Minimum Flutter ${{ matrix.flutter }} (${{ matrix.mode }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { flutter: "3.29.3", mode: apk, os: ubuntu-latest }
+          - { flutter: "3.29.3", mode: ios-cocoapods, os: macos-latest }
+          - { flutter: "3.44.0", mode: ios-swiftpm, os: macos-latest }
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - if: matrix.mode == 'apk'
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2
+        with:
+          flutter-version: ${{ matrix.flutter }}
+          channel: "stable"
+          cache: true
+      - name: Build a new app that depends on the package
+        run: ${{ env.PACKAGE_DIR }}/tool/min_consumer.sh ${{ matrix.mode }}

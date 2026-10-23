@@ -1,0 +1,32 @@
+name: photo_manager_video_player
+description: Play photo_manager AssetEntity videos with zero copies of the original — MediaStore content URIs on Android, PhotoKit AVPlayerItems on Darwin.
+version: 0.1.0
+homepage: https://github.com/fluttercandies/flutter_photo_manager_plugins/tree/main/packages/photo_manager_video_player
+topics:
+  - photo-manager
+  - video-player
+  - gallery
+
+environment:
+  sdk: ">=3.3.0 <4.0.0"
+  flutter: ">=3.29.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  photo_manager: ">=3.0.0 <4.0.0"
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  plugin:
+    platforms:
+      android:
+        package: com.fluttercandies.photo_manager_video_player
+        pluginClass: PhotoManagerVideoPlayerPlugin
+      ios:
+        pluginClass: PhotoManagerVideoPlayerPlugin
+        sharedDarwinSource: true
