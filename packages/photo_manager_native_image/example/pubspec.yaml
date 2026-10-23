@@ -1,0 +1,23 @@
+name: example
+description: Example app for photo_manager_native_image.
+publish_to: 'none'
+version: 0.1.0
+
+environment:
+  sdk: ">=3.3.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  photo_manager: ">=3.0.0 <4.0.0"
+  photo_manager_image_provider: ^2.2.0
+  photo_manager_native_image:
+    path: ../
+
+dev_dependencies:
+  flutter_lints: ^6.0.0
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true

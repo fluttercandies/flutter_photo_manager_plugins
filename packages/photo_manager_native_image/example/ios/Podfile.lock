@@ -1,0 +1,29 @@
+PODS:
+  - Flutter (1.0.0)
+  - photo_manager (3.12.0):
+    - Flutter
+    - FlutterMacOS
+  - photo_manager_native_image (0.1.0):
+    - Flutter
+
+DEPENDENCIES:
+  - Flutter (from `Flutter`)
+  - photo_manager (from `.symlinks/plugins/photo_manager/darwin`)
+  - photo_manager_native_image (from `.symlinks/plugins/photo_manager_native_image/darwin`)
+
+EXTERNAL SOURCES:
+  Flutter:
+    :path: Flutter
+  photo_manager:
+    :path: ".symlinks/plugins/photo_manager/darwin"
+  photo_manager_native_image:
+    :path: ".symlinks/plugins/photo_manager_native_image/darwin"
+
+SPEC CHECKSUMS:
+  Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
+  photo_manager: c303e4476f6c220274119f0212a7753e45edd4a2
+  photo_manager_native_image: 6ad513f20a7a0ce489d29fd7b510fe5b10bb91d5
+
+PODFILE CHECKSUM: 3c63482e143d1b91d2d2560aee9fb04ecc74ac7e
+
+COCOAPODS: 1.16.2

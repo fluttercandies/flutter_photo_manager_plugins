@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="330" viewBox="0 0 960 330" font-family="-apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="13">
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10z" fill="#555"/>
+    </marker>
+    <style>
+      .box{fill:#f6f8fa;stroke:#8b949e;stroke-width:1.2;rx:6}
+      .warn{fill:#fff1e5;stroke:#e36209}
+      .good{fill:#e6f4ea;stroke:#1a7f37}
+      .t{fill:#24292f;text-anchor:middle}
+      .h{fill:#24292f;font-size:14px;font-weight:600}
+      .s{fill:#57606a;font-size:11px;text-anchor:middle}
+      .ln{stroke:#555;stroke-width:1.4;fill:none;marker-end:url(#a)}
+      .lane{fill:none;stroke:#d0d7de;stroke-dasharray:4 4}
+    </style>
+  </defs>
+
+  <rect x="10" y="10" width="940" height="140" class="lane"/>
+  <text x="24" y="32" class="h">photo_manager_image_provider</text>
+
+  <rect x="30" y="60" width="120" height="56" class="box"/>
+  <text x="90" y="84" class="t">Photo library</text>
+  <text x="90" y="100" class="s">PhotoKit / MediaStore</text>
+
+  <rect x="190" y="60" width="120" height="56" class="box"/>
+  <text x="250" y="84" class="t">Native decode</text>
+  <text x="250" y="100" class="s">bitmap</text>
+
+  <rect x="350" y="60" width="120" height="56" class="box warn"/>
+  <text x="410" y="84" class="t">JPEG encode</text>
+  <text x="410" y="100" class="s">quality 95</text>
+
+  <rect x="510" y="60" width="120" height="56" class="box warn"/>
+  <text x="570" y="84" class="t">Channel copy</text>
+  <text x="570" y="100" class="s">Uint8List</text>
+
+  <rect x="670" y="60" width="120" height="56" class="box warn"/>
+  <text x="730" y="84" class="t">JPEG decode</text>
+  <text x="730" y="100" class="s">Flutter engine</text>
+
+  <rect x="830" y="60" width="100" height="56" class="box"/>
+  <text x="880" y="84" class="t">Texture</text>
+  <text x="880" y="100" class="s">GPU</text>
+
+  <path d="M150 88H188" class="ln"/><path d="M310 88H348" class="ln"/><path d="M470 88H508" class="ln"/>
+  <path d="M630 88H668" class="ln"/><path d="M790 88H828" class="ln"/>
+
+  <rect x="10" y="180" width="940" height="140" class="lane"/>
+  <text x="24" y="202" class="h">photo_manager_native_image</text>
+
+  <rect x="30" y="230" width="120" height="56" class="box"/>
+  <text x="90" y="254" class="t">Photo library</text>
+  <text x="90" y="270" class="s">PhotoKit / MediaStore</text>
+
+  <rect x="190" y="230" width="120" height="56" class="box good"/>
+  <text x="250" y="254" class="t">Native decode</text>
+  <text x="250" y="270" class="s">RGBA8888, malloc</text>
+
+  <rect x="350" y="230" width="120" height="56" class="box good"/>
+  <text x="410" y="254" class="t">Pointer</text>
+  <text x="410" y="270" class="s">one int64 over channel</text>
+
+  <rect x="510" y="230" width="120" height="56" class="box good"/>
+  <text x="570" y="254" class="t">ImmutableBuffer</text>
+  <text x="570" y="270" class="s">copy, then free</text>
+
+  <rect x="670" y="230" width="120" height="56" class="box good"/>
+  <text x="730" y="254" class="t">ImageDescriptor.raw</text>
+  <text x="730" y="270" class="s">no codec</text>
+
+  <rect x="830" y="230" width="100" height="56" class="box"/>
+  <text x="880" y="254" class="t">Texture</text>
+  <text x="880" y="270" class="s">GPU</text>
+
+  <path d="M150 258H188" class="ln"/><path d="M310 258H348" class="ln"/><path d="M470 258H508" class="ln"/>
+  <path d="M630 258H668" class="ln"/><path d="M790 258H828" class="ln"/>
+</svg>

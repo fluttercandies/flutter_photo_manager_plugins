@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="300" viewBox="0 0 960 300" font-family="-apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="13">
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10z" fill="#555"/>
+    </marker>
+    <marker id="r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10z" fill="#cf222e"/>
+    </marker>
+    <style>
+      .box{stroke-width:1.2;rx:6}
+      .app{fill:#eef2ff;stroke:#4c5fd5}
+      .pkg{fill:#e6f4ea;stroke:#1a7f37}
+      .nat{fill:#fff8e1;stroke:#b08800}
+      .t{fill:#24292f;text-anchor:middle}
+      .s{fill:#57606a;font-size:11px;text-anchor:middle}
+      .h{fill:#57606a;font-size:12px;font-weight:600;text-anchor:middle}
+      .ln{stroke:#555;stroke-width:1.4;fill:none;marker-end:url(#a)}
+      .cx{stroke:#cf222e;stroke-width:1.4;fill:none;stroke-dasharray:5 4;marker-end:url(#r)}
+      .n{fill:#fff;stroke:#555;stroke-width:1.2}
+      .nt{fill:#24292f;font-size:11px;font-weight:600;text-anchor:middle}
+      .lane{fill:none;stroke:#d0d7de;stroke-dasharray:4 4}
+    </style>
+  </defs>
+
+  <rect x="20" y="20" width="300" height="260" class="lane"/>
+  <text x="170" y="42" class="h">Flutter framework</text>
+  <rect x="330" y="20" width="300" height="260" class="lane"/>
+  <text x="480" y="42" class="h">Package · Dart</text>
+  <rect x="640" y="20" width="300" height="260" class="lane"/>
+  <text x="790" y="42" class="h">Package · native</text>
+
+  <rect x="35" y="120" width="120" height="54" class="box app"/>
+  <text x="95" y="143" class="t">Image widget</text>
+  <text x="95" y="160" class="s">resolve()</text>
+
+  <rect x="185" y="120" width="120" height="54" class="box app"/>
+  <text x="245" y="143" class="t">ImageCache</text>
+  <text x="245" y="160" class="s">putIfAbsent(key)</text>
+
+  <rect x="345" y="120" width="120" height="54" class="box pkg"/>
+  <text x="405" y="143" class="t">Completer</text>
+  <text x="405" y="160" class="s">listener tracking</text>
+
+  <rect x="495" y="120" width="120" height="54" class="box pkg"/>
+  <text x="555" y="143" class="t">Request</text>
+  <text x="555" y="160" class="s">requestId</text>
+
+  <rect x="655" y="120" width="120" height="54" class="box nat"/>
+  <text x="715" y="143" class="t">Worker queue</text>
+  <text x="715" y="160" class="s">decode</text>
+
+  <rect x="805" y="120" width="120" height="54" class="box nat"/>
+  <text x="865" y="143" class="t">RGBA buffer</text>
+  <text x="865" y="160" class="s">malloc</text>
+
+  <path d="M155 147H183" class="ln"/>
+  <path d="M305 147H343" class="ln"/>
+  <path d="M465 147H493" class="ln"/>
+  <path d="M615 147H653" class="ln"/>
+  <path d="M775 147H803" class="ln"/>
+
+  <path d="M865 174V230H95V176" class="ln"/>
+
+  <path d="M405 120V80H715V118" class="cx"/>
+
+  <circle cx="169" cy="147" r="9" class="n"/><text x="169" y="151" class="nt">1</text>
+  <circle cx="324" cy="147" r="9" class="n"/><text x="324" y="151" class="nt">2</text>
+  <circle cx="479" cy="147" r="9" class="n"/><text x="479" y="151" class="nt">3</text>
+  <circle cx="634" cy="147" r="9" class="n"/><text x="634" y="151" class="nt">4</text>
+  <circle cx="789" cy="147" r="9" class="n"/><text x="789" y="151" class="nt">5</text>
+  <circle cx="480" cy="230" r="9" class="n"/><text x="480" y="234" class="nt">6</text>
+  <circle cx="565" cy="80" r="9" class="n" stroke="#cf222e"/><text x="565" y="84" class="nt" fill="#cf222e">C</text>
+
+  <text x="865" y="258" class="s">reply once · copy · free</text>
+</svg>

@@ -1,0 +1,35 @@
+name: photo_manager_native_image
+description: Decode photo_manager AssetEntity thumbnails natively to RGBA and hand Flutter the pixels — no JPEG round trip, cancellable, memory-bounded.
+version: 0.1.0
+homepage: https://github.com/fluttercandies/flutter_photo_manager_plugins/tree/main/packages/photo_manager_native_image
+topics:
+  - photo-manager
+  - image-provider
+  - gallery
+
+environment:
+  sdk: ">=3.3.0 <4.0.0"
+  flutter: ">=3.24.0"
+
+dependencies:
+  ffi: ^2.1.0
+  flutter:
+    sdk: flutter
+  meta: ^1.10.0
+  photo_manager: ">=3.0.0 <4.0.0"
+
+dev_dependencies:
+  flutter_lints: ^6.0.0
+  flutter_test:
+    sdk: flutter
+  pigeon: ^27.3.2
+
+flutter:
+  plugin:
+    platforms:
+      android:
+        package: com.fluttercandies.photo_manager_native_image
+        pluginClass: PhotoManagerNativeImagePlugin
+      ios:
+        pluginClass: PhotoManagerNativeImagePlugin
+        sharedDarwinSource: true
