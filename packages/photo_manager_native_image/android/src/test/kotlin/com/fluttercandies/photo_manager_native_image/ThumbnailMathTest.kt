@@ -73,4 +73,42 @@ class ThumbnailMathTest {
         assertFalse(ThumbnailMath.coversTarget(512, 288, 512, 512))
         assertFalse(ThumbnailMath.coversTarget(540, 304, 384, 384))
     }
+
+    @Test
+    fun sampleSizeKeepsHdrDecodeAtOrAboveTarget() {
+        assertEquals(1, ThumbnailMath.sampleSize(3000, 4000, 2217))
+        assertEquals(2, ThumbnailMath.sampleSize(6120, 8160, 2217))
+        assertEquals(1, ThumbnailMath.sampleSize(800, 600, 2217))
+    }
+
+    @Test
+    fun coverMatrixRotates90AndFills() {
+        // 3000x4000 bitmap shown upright (rotation 90) is 4000x3000; the 1080x1440 view
+        // is portrait-aspect-matched to 3000x4000 only after rotation, so fill scale is
+        // max(1080/4000, 1440/3000) = 0.48.
+        val m = ThumbnailMath.coverMatrixValues(3000, 4000, 90, 1080, 1440)
+        assertEquals(9, m.size)
+        // Rotation by 90 about the bitmap centre, then scale s, then centre in the view.
+        val s = 0.48f
+        assertEquals(0f, m[0], 1e-4f)
+        assertEquals(-s, m[1], 1e-4f)
+        assertEquals(1080f / 2 + s * 4000f / 2, m[2], 1e-3f)
+        assertEquals(s, m[3], 1e-4f)
+        assertEquals(0f, m[4], 1e-4f)
+        assertEquals(1440f / 2 - s * 3000f / 2, m[5], 1e-3f)
+        assertEquals(0f, m[6], 1e-4f)
+        assertEquals(0f, m[7], 1e-4f)
+        assertEquals(1f, m[8], 1e-4f)
+    }
+
+    @Test
+    fun coverMatrixScalesUprightSizeToFillTheView() {
+        // Stored 4000x3000 with rotation 90 is upright 3000x4000: 1080x1440 needs 0.36.
+        val m = ThumbnailMath.coverMatrixValues(4000, 3000, 90, 1080, 1440)
+        val s = 0.36f
+        assertEquals(-s, m[1], 1e-4f)
+        assertEquals(s, m[3], 1e-4f)
+        assertEquals(1080f / 2 + s * 3000f / 2, m[2], 1e-3f)
+        assertEquals(1440f / 2 - s * 4000f / 2, m[5], 1e-3f)
+    }
 }

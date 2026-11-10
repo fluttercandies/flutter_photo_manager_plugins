@@ -94,4 +94,35 @@ object ThumbnailMath {
         val thumbLandscape = thumbWidth > thumbHeight
         return if (sourceLandscape == thumbLandscape) normalized else 0
     }
+
+    /**
+     * The nine `android.graphics.Matrix` values that rotate a `bitmapWidth x
+     * bitmapHeight` bitmap by [rotation] degrees (multiples of 90) and scale it
+     * to fill `viewWidth x viewHeight`, centred (aspect fill).
+     */
+    fun coverMatrixValues(
+        bitmapWidth: Int,
+        bitmapHeight: Int,
+        rotation: Int,
+        viewWidth: Int,
+        viewHeight: Int,
+    ): FloatArray {
+        val turns = (((rotation / 90) % 4) + 4) % 4
+        val cos = intArrayOf(1, 0, -1, 0)[turns]
+        val sin = intArrayOf(0, 1, 0, -1)[turns]
+        val quarter = turns % 2 == 1
+        val uprightWidth = if (quarter) bitmapHeight else bitmapWidth
+        val uprightHeight = if (quarter) bitmapWidth else bitmapHeight
+        if (uprightWidth <= 0 || uprightHeight <= 0) return floatArrayOf(1f, 0f, 0f, 0f, 1f, 0f, 0f, 0f, 1f)
+        val scale = max(viewWidth.toFloat() / uprightWidth, viewHeight.toFloat() / uprightHeight)
+        val a = scale * cos
+        val b = -scale * sin
+        val c = scale * sin
+        val d = scale * cos
+        val halfW = bitmapWidth / 2f
+        val halfH = bitmapHeight / 2f
+        val tx = viewWidth / 2f - (a * halfW + b * halfH)
+        val ty = viewHeight / 2f - (c * halfW + d * halfH)
+        return floatArrayOf(a, b, tx, c, d, ty, 0f, 0f, 1f)
+    }
 }

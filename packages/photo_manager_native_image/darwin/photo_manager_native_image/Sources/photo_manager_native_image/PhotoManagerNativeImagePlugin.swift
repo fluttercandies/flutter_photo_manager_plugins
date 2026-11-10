@@ -8,6 +8,11 @@ public class PhotoManagerNativeImagePlugin: NSObject, FlutterPlugin {
     public static func register(with registrar: FlutterPluginRegistrar) {
         let instance = PhotoManagerNativeImagePlugin()
         NativeImageHostApiSetup.setUp(binaryMessenger: registrar.messenger(), api: instance)
+        #if os(iOS)
+        registrar.register(
+            HdrAssetViewFactory(loader: instance.loader),
+            withId: "photo_manager_native_image/hdr_view")
+        #endif
         registrar.publish(instance)
     }
 

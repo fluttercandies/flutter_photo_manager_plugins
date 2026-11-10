@@ -1,3 +1,14 @@
+## 0.2.0
+
+- `NativeAssetHdrView`: an opt-in native view that draws an image with its
+  gain map applied on HDR displays (iOS 17+ `UIImageView` with
+  `preferredImageDynamicRange: .high`; Android 14+ `ImageView` in a Hybrid
+  Composition platform view). It stays transparent for SDR photos, on older
+  OS versions and on failure, so it is meant to sit above a regular image.
+  The Android activity window must be in `COLOR_MODE_HDR`; the plugin does
+  not change it.
+- Existing API unchanged.
+
 ## 0.1.0
 
 - `NativeImageProvider`, `NativeAssetImage`, `NativeImageException` /
