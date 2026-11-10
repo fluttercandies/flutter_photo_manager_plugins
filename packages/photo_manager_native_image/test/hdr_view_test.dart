@@ -44,7 +44,9 @@ void main() {
       final UiKitView view = tester.widget<UiKitView>(find.byType(UiKitView));
       expect(view.viewType, 'photo_manager_native_image/hdr_view');
       expect(
-          view.creationParams, <String, Object?>{'assetId': 'a', 'size': 2217});
+        view.creationParams,
+        <String, Object?>{'assetId': 'a', 'size': 2217},
+      );
     },
     variant: TargetPlatformVariant.only(TargetPlatform.iOS),
   );
@@ -110,7 +112,8 @@ void main() {
       expect(creates, hasLength(2));
 
       await tester.pumpWidget(
-          _host(NativeAssetHdrView(_image(modified: 9), size: 2217)));
+        _host(NativeAssetHdrView(_image(modified: 9), size: 2217)),
+      );
       await tester.pump();
       expect(creates, hasLength(3));
     },
