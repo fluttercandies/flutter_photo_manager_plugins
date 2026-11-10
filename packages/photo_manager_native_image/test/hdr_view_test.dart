@@ -35,76 +35,86 @@ Widget _host(Widget child) =>
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  testWidgets('iOS builds a UiKitView with assetId and size', (tester) async {
-    _mockPlatformViews();
-    await tester.pumpWidget(_host(NativeAssetHdrView(_image(), size: 2217)));
+  testWidgets(
+    'iOS builds a UiKitView with assetId and size',
+    (tester) async {
+      _mockPlatformViews();
+      await tester.pumpWidget(_host(NativeAssetHdrView(_image(), size: 2217)));
 
-    final UiKitView view = tester.widget<UiKitView>(find.byType(UiKitView));
-    expect(view.viewType, 'photo_manager_native_image/hdr_view');
-    expect(view.creationParams, <String, Object?>{'assetId': 'a', 'size': 2217});
-  },
-      variant: TargetPlatformVariant.only(TargetPlatform.iOS),
+      final UiKitView view = tester.widget<UiKitView>(find.byType(UiKitView));
+      expect(view.viewType, 'photo_manager_native_image/hdr_view');
+      expect(
+          view.creationParams, <String, Object?>{'assetId': 'a', 'size': 2217});
+    },
+    variant: TargetPlatformVariant.only(TargetPlatform.iOS),
   );
 
-  testWidgets('Android builds a hybrid composition PlatformViewLink',
-      (tester) async {
-    final List<MethodCall> creates = _mockPlatformViews();
-    await tester.pumpWidget(_host(NativeAssetHdrView(_image(), size: 2217)));
-    await tester.pump();
+  testWidgets(
+    'Android builds a hybrid composition PlatformViewLink',
+    (tester) async {
+      final List<MethodCall> creates = _mockPlatformViews();
+      await tester.pumpWidget(_host(NativeAssetHdrView(_image(), size: 2217)));
+      await tester.pump();
 
-    final PlatformViewLink link =
-        tester.widget<PlatformViewLink>(find.byType(PlatformViewLink));
-    expect(link.viewType, 'photo_manager_native_image/hdr_view');
-    expect(creates, hasLength(1));
-    final Map<Object?, Object?> args =
-        creates.single.arguments as Map<Object?, Object?>;
-    expect(args['viewType'], 'photo_manager_native_image/hdr_view');
-    expect(args['hybrid'], true);
-  },
-      variant: TargetPlatformVariant.only(TargetPlatform.android),
+      final PlatformViewLink link =
+          tester.widget<PlatformViewLink>(find.byType(PlatformViewLink));
+      expect(link.viewType, 'photo_manager_native_image/hdr_view');
+      expect(creates, hasLength(1));
+      final Map<Object?, Object?> args =
+          creates.single.arguments as Map<Object?, Object?>;
+      expect(args['viewType'], 'photo_manager_native_image/hdr_view');
+      expect(args['hybrid'], true);
+    },
+    variant: TargetPlatformVariant.only(TargetPlatform.android),
   );
 
-  testWidgets('other platforms build nothing native', (tester) async {
-    await tester.pumpWidget(_host(NativeAssetHdrView(_image(), size: 2217)));
+  testWidgets(
+    'other platforms build nothing native',
+    (tester) async {
+      await tester.pumpWidget(_host(NativeAssetHdrView(_image(), size: 2217)));
 
-    expect(find.byType(UiKitView), findsNothing);
-    expect(find.byType(PlatformViewLink), findsNothing);
-    expect(find.byType(SizedBox), findsOneWidget);
-  },
-      variant: TargetPlatformVariant.only(TargetPlatform.macOS),
+      expect(find.byType(UiKitView), findsNothing);
+      expect(find.byType(PlatformViewLink), findsNothing);
+      expect(find.byType(SizedBox), findsOneWidget);
+    },
+    variant: TargetPlatformVariant.only(TargetPlatform.macOS),
   );
 
-  testWidgets('never takes pointers', (tester) async {
-    _mockPlatformViews();
-    await tester.pumpWidget(_host(NativeAssetHdrView(_image(), size: 2217)));
+  testWidgets(
+    'never takes pointers',
+    (tester) async {
+      _mockPlatformViews();
+      await tester.pumpWidget(_host(NativeAssetHdrView(_image(), size: 2217)));
 
-    final IgnorePointer ignore = tester.widget<IgnorePointer>(
-      find.ancestor(
-        of: find.byType(UiKitView),
-        matching: find.byType(IgnorePointer),
-      ),
-    );
-    expect(ignore.ignoring, true);
-  },
-      variant: TargetPlatformVariant.only(TargetPlatform.iOS),
+      final IgnorePointer ignore = tester.widget<IgnorePointer>(
+        find.ancestor(
+          of: find.byType(UiKitView),
+          matching: find.byType(IgnorePointer),
+        ),
+      );
+      expect(ignore.ignoring, true);
+    },
+    variant: TargetPlatformVariant.only(TargetPlatform.iOS),
   );
 
-  testWidgets('a new size or modified date makes a new view', (tester) async {
-    final List<MethodCall> creates = _mockPlatformViews();
-    await tester.pumpWidget(_host(NativeAssetHdrView(_image(), size: 2000)));
-    await tester.pump();
-    expect(creates, hasLength(1));
+  testWidgets(
+    'a new size or modified date makes a new view',
+    (tester) async {
+      final List<MethodCall> creates = _mockPlatformViews();
+      await tester.pumpWidget(_host(NativeAssetHdrView(_image(), size: 2000)));
+      await tester.pump();
+      expect(creates, hasLength(1));
 
-    await tester.pumpWidget(_host(NativeAssetHdrView(_image(), size: 2217)));
-    await tester.pump();
-    expect(creates, hasLength(2));
+      await tester.pumpWidget(_host(NativeAssetHdrView(_image(), size: 2217)));
+      await tester.pump();
+      expect(creates, hasLength(2));
 
-    await tester
-        .pumpWidget(_host(NativeAssetHdrView(_image(modified: 9), size: 2217)));
-    await tester.pump();
-    expect(creates, hasLength(3));
-  },
-      variant: TargetPlatformVariant.only(TargetPlatform.android),
+      await tester.pumpWidget(
+          _host(NativeAssetHdrView(_image(modified: 9), size: 2217)));
+      await tester.pump();
+      expect(creates, hasLength(3));
+    },
+    variant: TargetPlatformVariant.only(TargetPlatform.android),
   );
 
   testWidgets('asserts on a video entity', (tester) async {

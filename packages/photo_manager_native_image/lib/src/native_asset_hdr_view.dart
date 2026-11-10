@@ -39,7 +39,8 @@ class NativeAssetHdrView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    assert(entity.type == AssetType.image, 'NativeAssetHdrView draws images only.');
+    assert(entity.type == AssetType.image,
+        'NativeAssetHdrView draws images only.');
     final Map<String, Object?> params = <String, Object?>{
       'assetId': entity.id,
       'size': size,
@@ -61,8 +62,8 @@ class NativeAssetHdrView extends StatelessWidget {
           ) {
             return AndroidViewSurface(
               controller: controller as AndroidViewController,
-              gestureRecognizers:
-                  const <Factory<OneSequenceGestureRecognizer>>{},
+              gestureRecognizers: const <Factory<
+                  OneSequenceGestureRecognizer>>{},
               hitTestBehavior: PlatformViewHitTestBehavior.transparent,
             );
           },
