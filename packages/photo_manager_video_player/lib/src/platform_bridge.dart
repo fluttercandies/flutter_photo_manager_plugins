@@ -75,7 +75,7 @@ class AssetEntityVideoPlatform {
     });
   }
 
-  /// The Android platform view type that shows a player created with
+  /// The platform view type that shows a player created with
   /// `platformView`.
   static const String viewType = '$_name/view';
 

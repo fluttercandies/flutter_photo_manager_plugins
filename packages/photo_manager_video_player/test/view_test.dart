@@ -180,10 +180,33 @@ void main() {
       debugDefaultTargetPlatformOverride = null;
     });
 
-    testWidgets('other platforms keep the texture', (
+    testWidgets('iOS shows an AVPlayerLayer without a Dart rotation', (
       WidgetTester tester,
     ) async {
       debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+      final (AssetEntityVideoController controller, List<MethodCall> creates) =
+          await ready();
+
+      await tester.pumpWidget(AssetEntityVideoView(controller));
+
+      expect(
+        (creates.single.arguments as Map<Object?, Object?>)['viewType'],
+        'platformView',
+      );
+      expect(controller.usesPlatformView, isTrue);
+      expect(controller.textureId, isNull);
+      final UiKitView view = tester.widget<UiKitView>(find.byType(UiKitView));
+      expect(view.viewType, '$_name/view');
+      expect(view.creationParams, <String, Object?>{'playerId': -1});
+      expect(find.byType(Texture), findsNothing);
+      expect(find.byType(RotatedBox), findsNothing);
+      debugDefaultTargetPlatformOverride = null;
+    });
+
+    testWidgets('other platforms keep the texture', (
+      WidgetTester tester,
+    ) async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.macOS;
       final (AssetEntityVideoController controller, List<MethodCall> creates) =
           await ready();
 
@@ -197,6 +220,7 @@ void main() {
       expect(controller.usesPlatformView, isFalse);
       expect(controller.textureId, -1);
       expect(find.byType(PlatformViewLink), findsNothing);
+      expect(find.byType(UiKitView), findsNothing);
       expect(find.byType(Texture), findsOneWidget);
       debugDefaultTargetPlatformOverride = null;
     });

@@ -3,10 +3,14 @@ import UIKit
 
 public class PhotoManagerVideoPlayerPlugin: NSObject, FlutterPlugin {
     static let channelName = "com.fluttercandies/photo_manager_video_player"
+    static let viewType = "\(channelName)/view"
 
     private let registry: FlutterTextureRegistry
     private let messenger: FlutterBinaryMessenger
     private var players: [Int64: GalleryVideoPlayer] = [:]
+
+    // Texture ids count up from 0, so platform-view players count down from -1.
+    private var nextPlatformViewPlayerId: Int64 = -1
 
     /// Players the engine still owns; read by the engine-teardown test.
     var playerCount: Int { players.count }
@@ -24,6 +28,9 @@ public class PhotoManagerVideoPlayerPlugin: NSObject, FlutterPlugin {
         let channel = FlutterMethodChannel(
             name: channelName, binaryMessenger: registrar.messenger())
         registrar.addMethodCallDelegate(instance, channel: channel)
+        registrar.register(
+            PlatformVideoViewFactory { [weak instance] id in instance?.players[id] },
+            withId: viewType)
         // Only published instances receive detachFromEngine(for:).
         registrar.publish(instance)
     }
@@ -55,16 +62,24 @@ public class PhotoManagerVideoPlayerPlugin: NSObject, FlutterPlugin {
                     code: "playbackFailed", message: "Missing 'assetId'.", details: nil))
             }
             AudioSession.upgradeForPlaybackOnce()
+            let platformViewPlayerId: Int64?
+            if args["viewType"] as? String == "platformView" {
+                platformViewPlayerId = nextPlatformViewPlayerId
+                nextPlatformViewPlayerId -= 1
+            } else {
+                platformViewPlayerId = nil
+            }
             let player = GalleryVideoPlayer(
                 registry: registry,
                 messenger: messenger,
+                platformViewPlayerId: platformViewPlayerId,
                 localIdentifier: assetId,
                 allowNetworkAccess: args["allowNetworkAccess"] as? Bool ?? true,
                 looping: args["looping"] as? Bool ?? false,
                 volume: args["volume"] as? Double ?? 1.0
             )
-            players[player.textureId] = player
-            return result(player.textureId)
+            players[player.playerId] = player
+            return result(player.playerId)
         }
 
         guard let textureId = (args["textureId"] as? NSNumber)?.int64Value,

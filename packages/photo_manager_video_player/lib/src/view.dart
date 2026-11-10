@@ -18,7 +18,7 @@ import 'value.dart';
 /// letterbox. With [AssetEntityVideoViewType.textureView] the frames arrive as a
 /// Flutter texture, so this composites like any other widget — opacity,
 /// transforms and scrolling all behave normally. See
-/// [AssetEntityVideoViewType.platformView] for the Android alternative.
+/// [AssetEntityVideoViewType.platformView] for the HDR alternative.
 class AssetEntityVideoView extends StatelessWidget {
   /// Renders [controller].
   const AssetEntityVideoView(this.controller, {super.key});
@@ -36,7 +36,10 @@ class AssetEntityVideoView extends StatelessWidget {
           return const SizedBox.expand();
         }
         if (controller.usesPlatformView) {
-          // The decoder already rotated the frames, so no RotatedBox here.
+          // The platform already rotated the frames, so no RotatedBox here.
+          if (defaultTargetPlatform == TargetPlatform.iOS) {
+            return _UiKitVideoView(playerId: playerId);
+          }
           return _PlatformVideoView(playerId: playerId);
         }
         final int textureId = playerId;
@@ -85,6 +88,27 @@ class _PlatformVideoView extends StatelessWidget {
             ..addOnPlatformViewCreatedListener(params.onPlatformViewCreated)
             ..create();
         },
+      ),
+    );
+  }
+}
+
+class _UiKitVideoView extends StatelessWidget {
+  const _UiKitVideoView({required this.playerId});
+
+  final int playerId;
+
+  @override
+  Widget build(BuildContext context) {
+    // IgnorePointer leaves gestures to the Flutter widgets above the video.
+    return IgnorePointer(
+      child: UiKitView(
+        // A new player needs a new AVPlayerLayer bound to it.
+        key: ValueKey<int>(playerId),
+        viewType: AssetEntityVideoPlatform.viewType,
+        layoutDirection: Directionality.maybeOf(context) ?? TextDirection.ltr,
+        creationParams: <String, Object?>{'playerId': playerId},
+        creationParamsCodec: const StandardMessageCodec(),
       ),
     );
   }

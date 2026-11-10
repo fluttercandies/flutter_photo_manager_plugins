@@ -2,15 +2,25 @@ import AVFoundation
 import Flutter
 import Photos
 
-/// Owns one AVPlayer built from the `AVPlayerItem` PhotoKit hands back, and
-/// publishes its frames as a Flutter texture.
+/// Owns one AVPlayer built from the `AVPlayerItem` PhotoKit hands back. It
+/// either publishes its frames as a Flutter texture, or hands the player to a
+/// [PlatformVideoView] whose `AVPlayerLayer` keeps HDR video in EDR.
 ///
 /// The sandbox extension that grants access rides on that player item —
 /// extracting a URL from it and playing it elsewhere fails with
 /// NSCocoaErrorDomain 257 on iOS 18+, which is why this player and PhotoKit
 /// have to live together.
 class GalleryVideoPlayer: NSObject {
-    private(set) var textureId: Int64 = 0
+    /// The texture id, or for a platform-view player the id its view is created with.
+    private(set) var playerId: Int64 = 0
+
+    /// Whether frames go to a platform view's `AVPlayerLayer` instead of a texture.
+    let usesPlatformView: Bool
+
+    /// The view showing this player; it receives the `AVPlayer` once PhotoKit resolves it.
+    weak var platformView: PlatformVideoView? {
+        didSet { platformView?.show(avPlayer) }
+    }
 
     private let registry: FlutterTextureRegistry
     private let localIdentifier: String
@@ -50,21 +60,23 @@ class GalleryVideoPlayer: NSObject {
     init(
         registry: FlutterTextureRegistry,
         messenger: FlutterBinaryMessenger,
+        platformViewPlayerId: Int64?,
         localIdentifier: String,
         allowNetworkAccess: Bool,
         looping: Bool,
         volume: Double
     ) {
         self.registry = registry
+        self.usesPlatformView = platformViewPlayerId != nil
         self.localIdentifier = localIdentifier
         self.allowNetworkAccess = allowNetworkAccess
         self.isLooping = looping
         self.initialVolume = volume
         super.init()
 
-        textureId = registry.register(self)
+        playerId = platformViewPlayerId ?? registry.register(self)
         let channel = FlutterEventChannel(
-            name: "\(PhotoManagerVideoPlayerPlugin.channelName)/events/\(textureId)",
+            name: "\(PhotoManagerVideoPlayerPlugin.channelName)/events/\(playerId)",
             binaryMessenger: messenger
         )
         channel.setStreamHandler(self)
@@ -114,25 +126,28 @@ class GalleryVideoPlayer: NSObject {
             return
         }
 
-        // The colour properties tone-map HDR footage to SDR for the texture.
-        let output = AVPlayerItemVideoOutput(outputSettings: [
-            AVVideoColorPropertiesKey: [
-                AVVideoColorPrimariesKey: AVVideoColorPrimaries_ITU_R_709_2,
-                AVVideoTransferFunctionKey: AVVideoTransferFunction_ITU_R_709_2,
-                AVVideoYCbCrMatrixKey: AVVideoYCbCrMatrix_ITU_R_709_2,
-            ],
-            kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA,
-            kCVPixelBufferIOSurfacePropertiesKey as String: [:],
-        ])
-        playerItem.add(output)
-        videoOutput = output
+        if !usesPlatformView {
+            // The colour properties tone-map HDR footage to SDR for the texture.
+            let output = AVPlayerItemVideoOutput(outputSettings: [
+                AVVideoColorPropertiesKey: [
+                    AVVideoColorPrimariesKey: AVVideoColorPrimaries_ITU_R_709_2,
+                    AVVideoTransferFunctionKey: AVVideoTransferFunction_ITU_R_709_2,
+                    AVVideoYCbCrMatrixKey: AVVideoYCbCrMatrix_ITU_R_709_2,
+                ],
+                kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA,
+                kCVPixelBufferIOSurfacePropertiesKey as String: [:],
+            ])
+            playerItem.add(output)
+            videoOutput = output
+        }
 
         if let track = playerItem.asset.tracks(withMediaType: .video).first {
             let upright = track.naturalSize.applying(track.preferredTransform)
             emit(event: "videoSize", extra: [
                 "width": abs(upright.width),
                 "height": abs(upright.height),
-                "rotationDegrees": rotationDegrees(of: track.preferredTransform),
+                // AVPlayerLayer applies the track transform itself.
+                "rotationDegrees": usesPlatformView ? 0 : rotationDegrees(of: track.preferredTransform),
             ])
         }
 
@@ -143,9 +158,13 @@ class GalleryVideoPlayer: NSObject {
         pendingVolume = nil
         avPlayer = player
 
-        let link = CADisplayLink(target: self, selector: #selector(onDisplayLink))
-        link.add(to: .main, forMode: .common)
-        displayLink = link
+        if usesPlatformView {
+            platformView?.show(player)
+        } else {
+            let link = CADisplayLink(target: self, selector: #selector(onDisplayLink))
+            link.add(to: .main, forMode: .common)
+            displayLink = link
+        }
 
         statusObservation = playerItem.observe(\.status, options: [.initial, .new]) { [weak self] item, _ in
             DispatchQueue.main.async { self?.handleStatusChange(item) }
@@ -205,16 +224,20 @@ class GalleryVideoPlayer: NSObject {
         bufferLock.lock()
         latestPixelBuffer = buffer
         bufferLock.unlock()
-        registry.textureFrameAvailable(textureId)
+        registry.textureFrameAvailable(playerId)
 
-        if !firstFrameEmitted {
-            firstFrameEmitted = true
-            emit(event: "firstFrame")
-        }
+        frameRendered()
         // While playback is stopped the link runs only to land one frame.
         if avPlayer?.rate == 0 {
             displayLink?.isPaused = true
         }
+    }
+
+    /// Reports the first frame on screen, from the texture or the platform view's layer.
+    func frameRendered() {
+        if firstFrameEmitted || released { return }
+        firstFrameEmitted = true
+        emit(event: "firstFrame")
     }
 
     private func handleStatusChange(_ item: AVPlayerItem) {
@@ -310,11 +333,14 @@ class GalleryVideoPlayer: NSObject {
         displayLink = nil
         avPlayer?.pause()
         avPlayer = nil
+        platformView?.show(nil)
         videoOutput = nil
         bufferLock.lock()
         latestPixelBuffer = nil
         bufferLock.unlock()
-        registry.unregisterTexture(textureId)
+        if !usesPlatformView {
+            registry.unregisterTexture(playerId)
+        }
         eventSink = nil
         events?.setStreamHandler(nil)
         events = nil

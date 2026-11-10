@@ -10,8 +10,8 @@ enum AssetEntityVideoViewType {
   /// A Flutter texture, composited like any other widget.
   textureView,
 
-  /// An Android `SurfaceView` embedded as a platform view. Android only;
-  /// other platforms fall back to [textureView].
+  /// A platform view: an Android `SurfaceView`, or an iOS `AVPlayerLayer`.
+  /// Other platforms fall back to [textureView].
   ///
   /// The video stays on its own display layer, so HDR video is shown with the
   /// system's HDR handling instead of being flattened into the 8-bit sRGB
@@ -116,7 +116,7 @@ class AssetEntityVideoValue {
   /// 270). [AssetEntityVideoView] applies it; [size] is already the upright
   /// size. Only needed when drawing `AssetEntityVideoController.textureId`
   /// yourself. Always 0 for [AssetEntityVideoViewType.platformView], whose
-  /// frames the decoder already rotates.
+  /// frames the platform already rotates.
   final int rotationCorrection;
 
   /// True once a frame has actually reached the platform surface — the signal

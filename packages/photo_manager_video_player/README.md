@@ -79,16 +79,17 @@ quarter turn is reported as `rotationCorrection` and `AssetEntityVideoView`
 rotates the texture, so nothing is re-encoded. To draw the video yourself,
 use `controller.textureId` in a `Texture` widget with the same rotation.
 
-**Android HDR: platform view.** A texture is composited into the Flutter
-layer, which is 8-bit sRGB, so HLG/HDR10 video loses the system's HDR
-handling and looks brighter and flatter than in the Gallery app. Pass
-`viewType: AssetEntityVideoViewType.platformView` to draw into a `SurfaceView`
-embedded as a platform view instead (as `video_player`'s
-`VideoViewType.platformView`): the video keeps its own display layer. The
-decoder rotates those frames, so `rotationCorrection` is 0 and `textureId` is
-null. It composites like any platform view, and under a zero opacity it is
-not drawn at all, so cover it rather than hide it until `firstFrameRendered`.
-iOS always uses the texture.
+**HDR: platform view.** A texture is composited into the Flutter layer,
+which is 8-bit, so HLG/HDR10/Dolby Vision video loses the system's HDR
+handling: on Android it looks brighter and flatter than in the Gallery app,
+and on iOS it is tone-mapped to SDR. Pass
+`viewType: AssetEntityVideoViewType.platformView` to draw into a platform view
+instead (as `video_player`'s `VideoViewType.platformView`) — a `SurfaceView` on
+Android, an `AVPlayerLayer` on iOS. The video keeps the system's HDR handling,
+and on iOS an SDR screen still gets the system's tone mapping. The platform
+rotates those frames, so `rotationCorrection` is 0 and `textureId` is null. It
+composites like any platform view, and under a zero opacity it is not drawn at
+all, so cover it rather than hide it until `firstFrameRendered`.
 
 ## Controller lifecycle
 

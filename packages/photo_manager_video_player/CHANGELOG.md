@@ -5,9 +5,10 @@
   export of the original.
 - Android: MediaStore `content://` URI → ExoPlayer, drawn into a Flutter
   texture through `TextureRegistry.SurfaceProducer`.
-- Android: `viewType: AssetEntityVideoViewType.platformView` shows the video
-  in a `SurfaceView` platform view instead, so HDR video keeps its own display
-  layer. The default stays `textureView`; iOS always uses the texture.
+- `viewType: AssetEntityVideoViewType.platformView` shows the video in a
+  platform view instead — a `SurfaceView` on Android, an `AVPlayerLayer` on
+  iOS — so HDR video keeps the system's HDR handling. The default stays
+  `textureView`.
 - iOS: `PHImageManager.requestPlayerItem` → `AVPlayer`, drawn into a Flutter
   texture through `AVPlayerItemVideoOutput`.
 - Pauses in the background and resumes on return; a `play()` that would start

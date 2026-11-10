@@ -82,7 +82,7 @@ AssetEntityVideoValue applyPlayerEvent(
 String? _asString(Object? value) => value is String ? value : null;
 
 /// The platform player [controller] shows, once created — a texture id, or
-/// the id an Android platform view is created with.
+/// the id a platform view is created with.
 int? playerIdOf(AssetEntityVideoController controller) => controller._playerId;
 
 /// Plays a video that lives in the photo library, without copying the original.
@@ -129,11 +129,12 @@ class AssetEntityVideoController extends ValueNotifier<AssetEntityVideoValue> {
   /// life, since the platform player is built for one or the other.
   final AssetEntityVideoViewType viewType;
 
-  /// Whether the video is shown through an Android platform view; [viewType]
-  /// falls back to a texture elsewhere.
+  /// Whether the video is shown through a platform view; [viewType] falls
+  /// back to a texture on platforms without one.
   bool get usesPlatformView =>
       viewType == AssetEntityVideoViewType.platformView &&
-      defaultTargetPlatform == TargetPlatform.android;
+      (defaultTargetPlatform == TargetPlatform.android ||
+          defaultTargetPlatform == TargetPlatform.iOS);
 
   int? _playerId;
   StreamSubscription<dynamic>? _events;
