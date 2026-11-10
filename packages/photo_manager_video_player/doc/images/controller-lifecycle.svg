@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="300" viewBox="0 0 960 300" font-family="-apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="13">
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10z" fill="#555"/>
+    </marker>
+    <marker id="r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10z" fill="#cf222e"/>
+    </marker>
+    <style>
+      .box{stroke-width:1.2;rx:6}
+      .app{fill:#eef2ff;stroke:#4c5fd5}
+      .pkg{fill:#e6f4ea;stroke:#1a7f37}
+      .err{fill:#ffebe9;stroke:#cf222e}
+      .t{fill:#24292f;text-anchor:middle}
+      .s{fill:#57606a;font-size:11px;text-anchor:middle}
+      .ln{stroke:#555;stroke-width:1.4;fill:none;marker-end:url(#a)}
+      .cx{stroke:#cf222e;stroke-width:1.4;fill:none;stroke-dasharray:5 4;marker-end:url(#r)}
+      .n{fill:#fff;stroke:#555;stroke-width:1.2}
+      .nt{fill:#24292f;font-size:11px;font-weight:600;text-anchor:middle}
+    </style>
+  </defs>
+
+  <rect x="30" y="100" width="150" height="56" class="box app"/>
+  <text x="105" y="124" class="t">Controller created</text>
+  <text x="105" y="140" class="s">size · duration from asset</text>
+
+  <rect x="220" y="100" width="150" height="56" class="box pkg"/>
+  <text x="295" y="124" class="t">initialize()</text>
+  <text x="295" y="140" class="s">create player</text>
+
+  <rect x="410" y="100" width="150" height="56" class="box pkg"/>
+  <text x="485" y="124" class="t">isInitialized</text>
+  <text x="485" y="140" class="s">exact metadata</text>
+
+  <rect x="600" y="100" width="150" height="56" class="box pkg"/>
+  <text x="675" y="124" class="t">firstFrameRendered</text>
+  <text x="675" y="140" class="s">poster can fade out</text>
+
+  <rect x="790" y="100" width="140" height="56" class="box pkg"/>
+  <text x="860" y="124" class="t">playing</text>
+  <text x="860" y="140" class="s">position · completed</text>
+
+  <path d="M180 128H218" class="ln"/><path d="M370 128H408" class="ln"/><path d="M560 128H598" class="ln"/><path d="M750 128H788" class="ln"/>
+
+  <rect x="410" y="210" width="150" height="50" class="box err"/>
+  <text x="485" y="231" class="t">value.error</text>
+  <text x="485" y="247" class="s">typed code, never throws</text>
+
+  <path d="M295 156V235H408" class="cx"/>
+  <path d="M675 156V235H562" class="cx"/>
+
+  <rect x="30" y="210" width="150" height="50" class="box app"/>
+  <text x="105" y="231" class="t">dispose()</text>
+  <text x="105" y="247" class="s">releases player + texture</text>
+
+  <path d="M860 156V285H105V262" class="ln"/>
+</svg>

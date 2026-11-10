@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="330" viewBox="0 0 960 330" font-family="-apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="13">
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10z" fill="#555"/>
+    </marker>
+    <style>
+      .box{fill:#f6f8fa;stroke:#8b949e;stroke-width:1.2;rx:6}
+      .warn{fill:#fff1e5;stroke:#e36209}
+      .good{fill:#e6f4ea;stroke:#1a7f37}
+      .t{fill:#24292f;text-anchor:middle}
+      .h{fill:#24292f;font-size:14px;font-weight:600}
+      .s{fill:#57606a;font-size:11px;text-anchor:middle}
+      .ln{stroke:#555;stroke-width:1.4;fill:none;marker-end:url(#a)}
+      .lane{fill:none;stroke:#d0d7de;stroke-dasharray:4 4}
+    </style>
+  </defs>
+
+  <rect x="10" y="10" width="940" height="140" class="lane"/>
+  <text x="24" y="32" class="h">video_player + entity.file</text>
+
+  <rect x="30" y="60" width="150" height="56" class="box"/>
+  <text x="105" y="84" class="t">Photo library</text>
+  <text x="105" y="100" class="s">PhotoKit / MediaStore</text>
+
+  <rect x="220" y="60" width="150" height="56" class="box warn"/>
+  <text x="295" y="84" class="t">Export / copy</text>
+  <text x="295" y="100" class="s">whole file into sandbox</text>
+
+  <rect x="410" y="60" width="150" height="56" class="box warn"/>
+  <text x="485" y="84" class="t">file:// path</text>
+  <text x="485" y="100" class="s">app cache</text>
+
+  <rect x="600" y="60" width="150" height="56" class="box"/>
+  <text x="675" y="84" class="t">Player</text>
+  <text x="675" y="100" class="s">ExoPlayer / AVPlayer</text>
+
+  <rect x="790" y="60" width="140" height="56" class="box"/>
+  <text x="860" y="84" class="t">Texture</text>
+  <text x="860" y="100" class="s">Flutter</text>
+
+  <path d="M180 88H218" class="ln"/><path d="M370 88H408" class="ln"/><path d="M560 88H598" class="ln"/><path d="M750 88H788" class="ln"/>
+
+  <rect x="10" y="180" width="940" height="140" class="lane"/>
+  <text x="24" y="202" class="h">photo_manager_video_player</text>
+
+  <rect x="30" y="230" width="150" height="56" class="box"/>
+  <text x="105" y="254" class="t">Photo library</text>
+  <text x="105" y="270" class="s">PhotoKit / MediaStore</text>
+
+  <rect x="220" y="230" width="150" height="56" class="box good"/>
+  <text x="295" y="254" class="t">Asset reference</text>
+  <text x="295" y="270" class="s">content:// · AVPlayerItem</text>
+
+  <rect x="410" y="230" width="150" height="56" class="box good"/>
+  <text x="485" y="254" class="t">Player</text>
+  <text x="485" y="270" class="s">ExoPlayer / AVPlayer</text>
+
+  <rect x="600" y="230" width="150" height="56" class="box good"/>
+  <text x="675" y="254" class="t">Surface / pixel buffer</text>
+  <text x="675" y="270" class="s">no file on disk</text>
+
+  <rect x="790" y="230" width="140" height="56" class="box"/>
+  <text x="860" y="254" class="t">Texture</text>
+  <text x="860" y="270" class="s">Flutter</text>
+
+  <path d="M180 258H218" class="ln"/><path d="M370 258H408" class="ln"/><path d="M560 258H598" class="ln"/><path d="M750 258H788" class="ln"/>
+</svg>

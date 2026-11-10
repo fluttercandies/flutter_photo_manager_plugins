@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="330" viewBox="0 0 960 330" font-family="-apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="13">
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10z" fill="#555"/>
+    </marker>
+    <style>
+      .box{stroke-width:1.2;rx:6}
+      .nat{fill:#fff8e1;stroke:#b08800}
+      .pkg{fill:#e6f4ea;stroke:#1a7f37}
+      .app{fill:#eef2ff;stroke:#4c5fd5}
+      .t{fill:#24292f;text-anchor:middle}
+      .h{fill:#24292f;font-size:14px;font-weight:600}
+      .s{fill:#57606a;font-size:11px;text-anchor:middle}
+      .ln{stroke:#555;stroke-width:1.4;fill:none;marker-end:url(#a)}
+      .lane{fill:none;stroke:#d0d7de;stroke-dasharray:4 4}
+    </style>
+  </defs>
+
+  <rect x="10" y="10" width="940" height="140" class="lane"/>
+  <text x="24" y="32" class="h">Android</text>
+
+  <rect x="30" y="60" width="160" height="56" class="box nat"/>
+  <text x="110" y="84" class="t">MediaStore</text>
+  <text x="110" y="100" class="s">Video.Media/_id</text>
+
+  <rect x="230" y="60" width="160" height="56" class="box nat"/>
+  <text x="310" y="84" class="t">ExoPlayer</text>
+  <text x="310" y="100" class="s">media3</text>
+
+  <rect x="430" y="60" width="160" height="56" class="box pkg"/>
+  <text x="510" y="84" class="t">SurfaceProducer</text>
+  <text x="510" y="100" class="s">TextureRegistry</text>
+
+  <rect x="630" y="60" width="160" height="56" class="box pkg"/>
+  <text x="710" y="84" class="t">EventChannel</text>
+  <text x="710" y="100" class="s">size · position · state</text>
+
+  <rect x="830" y="60" width="100" height="56" class="box app"/>
+  <text x="880" y="84" class="t">Texture</text>
+  <text x="880" y="100" class="s">widget</text>
+
+  <path d="M190 88H228" class="ln"/><path d="M390 88H428" class="ln"/><path d="M590 88H628" class="ln"/><path d="M790 88H828" class="ln"/>
+
+  <rect x="10" y="180" width="940" height="140" class="lane"/>
+  <text x="24" y="202" class="h">iOS</text>
+
+  <rect x="30" y="230" width="160" height="56" class="box nat"/>
+  <text x="110" y="254" class="t">PHImageManager</text>
+  <text x="110" y="270" class="s">requestPlayerItem</text>
+
+  <rect x="230" y="230" width="160" height="56" class="box nat"/>
+  <text x="310" y="254" class="t">AVPlayer</text>
+  <text x="310" y="270" class="s">AVPlayerItem</text>
+
+  <rect x="430" y="230" width="160" height="56" class="box pkg"/>
+  <text x="510" y="254" class="t">AVPlayerItemVideoOutput</text>
+  <text x="510" y="270" class="s">BGRA · CADisplayLink</text>
+
+  <rect x="630" y="230" width="160" height="56" class="box pkg"/>
+  <text x="710" y="254" class="t">FlutterTexture</text>
+  <text x="710" y="270" class="s">copyPixelBuffer</text>
+
+  <rect x="830" y="230" width="100" height="56" class="box app"/>
+  <text x="880" y="254" class="t">Texture</text>
+  <text x="880" y="270" class="s">widget</text>
+
+  <path d="M190 258H228" class="ln"/><path d="M390 258H428" class="ln"/><path d="M590 258H628" class="ln"/><path d="M790 258H828" class="ln"/>
+</svg>
