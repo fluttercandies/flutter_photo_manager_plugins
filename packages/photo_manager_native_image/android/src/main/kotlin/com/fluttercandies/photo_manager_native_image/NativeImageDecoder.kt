@@ -187,7 +187,7 @@ class NativeImageDecoder(private val context: Context) {
     /** `(width, height, rotationDegrees)` of an image as MediaStore reports it. */
     @SuppressLint("InlinedApi")
     @Suppress("DEPRECATION")
-    private fun legacyImageMetadata(uri: Uri): Triple<Int, Int, Int> {
+    internal fun legacyImageMetadata(uri: Uri): Triple<Int, Int, Int> {
         val projection = arrayOf(
             MediaStore.Images.ImageColumns.WIDTH,
             MediaStore.Images.ImageColumns.HEIGHT,

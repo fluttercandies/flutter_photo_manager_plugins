@@ -220,6 +220,32 @@ The package's own tests and code generation need a newer Flutter than apps
 do: `pigeon` 27 needs `meta` 1.18 (Flutter 3.44 or later). Apps that depend
 on the package do not resolve these tools.
 
+## HDR photos
+
+`NativeAssetImage` hands Flutter 8-bit sRGB pixels, so a gain map (Apple HDR
+HEIC, Ultra HDR JPEG) is not applied. Stack `NativeAssetHdrView` above the
+regular image to show the HDR version on HDR-capable displays:
+
+```dart
+Stack(
+  fit: StackFit.expand,
+  children: <Widget>[
+    NativeAssetImage(entity, size: 1080, fit: BoxFit.cover),
+    NativeAssetHdrView(entity, size: 1080),
+  ],
+)
+```
+
+- The view is transparent for SDR photos, on iOS before 17, on Android before
+  14, and on any failure, so the image below always shows through.
+- It fills its box like `BoxFit.cover`, ignores pointers, and decodes the
+  shorter side to about `size` pixels (on Android, between `size` and twice
+  `size`, since it samples by powers of two). A new `size` or a modified asset
+  creates a new view.
+- Android only: HDR output needs the activity window in HDR color mode. The
+  plugin does not touch it; set it from the app, for example with
+  `window.colorMode = ActivityInfo.COLOR_MODE_HDR` while the view is shown.
+
 ## Public API
 
 The public surface follows `photo_manager_image_provider`:

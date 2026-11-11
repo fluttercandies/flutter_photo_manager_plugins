@@ -108,7 +108,7 @@ final class NativeImageLoader {
         }
     }
 
-    private func fetchAsset(_ assetId: String) -> PHAsset? {
+    func fetchAsset(_ assetId: String) -> PHAsset? {
         if let cached = assetCache.object(forKey: assetId as NSString) {
             return cached
         }

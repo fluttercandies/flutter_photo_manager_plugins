@@ -22,11 +22,18 @@ class PhotoManagerNativeImagePlugin : FlutterPlugin, NativeImageHostApi {
     }
 
     private var attachment: Attachment? = null
+    private var hdrExecutor: ExecutorService? = null
 
     override fun onAttachedToEngine(binding: FlutterPlugin.FlutterPluginBinding) {
         decoder = NativeImageDecoder(binding.applicationContext)
         attachment = Attachment()
         NativeImageHostApi.setUp(binding.binaryMessenger, this)
+        val hdr = Executors.newSingleThreadExecutor()
+        hdrExecutor = hdr
+        binding.platformViewRegistry.registerViewFactory(
+            "photo_manager_native_image/hdr_view",
+            HdrAssetViewFactory(decoder, hdr),
+        )
     }
 
     override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
@@ -37,6 +44,8 @@ class PhotoManagerNativeImagePlugin : FlutterPlugin, NativeImageHostApi {
             it.executor.shutdownNow()
         }
         attachment = null
+        hdrExecutor?.shutdownNow()
+        hdrExecutor = null
     }
 
     override fun requestImage(
