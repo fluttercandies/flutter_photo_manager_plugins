@@ -33,6 +33,8 @@ class HdrAssetViewFactory(
  * An `ImageView` that shows the image only when its decode carries a gain map
  * (API 34+); otherwise it stays transparent.
  */
+private const val PROBE_SAMPLE = 16
+
 class HdrAssetView(
     context: Context,
     private val decoder: NativeImageDecoder,
@@ -63,7 +65,9 @@ class HdrAssetView(
 
     override fun dispose() {
         disposed = true
+        val bitmap = (imageView.drawable as? android.graphics.drawable.BitmapDrawable)?.bitmap
         imageView.setImageDrawable(null)
+        bitmap?.recycle()
     }
 
     private fun decode(context: Context, id: Long, size: Int) {
@@ -74,10 +78,17 @@ class HdrAssetView(
             val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
             resolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, bounds) }
             if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return
+            // A tiny decode tells whether the file carries a gain map before paying for the full one.
+            val probe = BitmapFactory.Options().apply { inSampleSize = PROBE_SAMPLE }
+            val small = resolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, probe) } ?: return
+            val hasGainmap = small.hasGainmap()
+            small.recycle()
+            if (disposed || !hasGainmap) return
             val options = BitmapFactory.Options().apply {
                 inSampleSize = ThumbnailMath.sampleSize(bounds.outWidth, bounds.outHeight, size)
             }
-            val bitmap = resolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, options) } ?: return
+            val decoded = resolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, options) } ?: return
+            val bitmap = fitToSize(decoded, size)
             if (disposed || !bitmap.hasGainmap()) {
                 bitmap.recycle()
                 return
@@ -87,6 +98,30 @@ class HdrAssetView(
         } catch (_: Exception) {
             // Any failure leaves the view transparent.
         }
+    }
+
+    /**
+     * Power-of-two sampling can leave the shorter side up to twice [size]. On API 35+ the
+     * bitmap is scaled down to [size] with its gain map; if the gain map would be lost, the
+     * sampled bitmap is kept as is.
+     */
+    private fun fitToSize(bitmap: Bitmap, size: Int): Bitmap {
+        val shorter = minOf(bitmap.width, bitmap.height)
+        if (shorter <= size || Build.VERSION.SDK_INT < Build.VERSION_CODES.VANILLA_ICE_CREAM) return bitmap
+        val scale = size.toFloat() / shorter
+        val scaled = Bitmap.createScaledBitmap(
+            bitmap,
+            (bitmap.width * scale).toInt().coerceAtLeast(1),
+            (bitmap.height * scale).toInt().coerceAtLeast(1),
+            true,
+        )
+        if (scaled === bitmap) return bitmap
+        if (!scaled.hasGainmap()) {
+            scaled.recycle()
+            return bitmap
+        }
+        bitmap.recycle()
+        return scaled
     }
 
     private fun show(bitmap: Bitmap, degrees: Int) {

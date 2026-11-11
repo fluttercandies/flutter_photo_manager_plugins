@@ -7,6 +7,10 @@
   OS versions and on failure, so it is meant to sit above a regular image.
   The Android activity window must be in `COLOR_MODE_HDR`; the plugin does
   not change it.
+- Android: `NativeAssetHdrView` checks for a gain map with a 1/16 decode
+  before the full one, so SDR photos are never decoded at full size; on API
+  35+ it scales the sampled bitmap down to `size` (kept unscaled if the gain
+  map would be lost); and it recycles its bitmap on dispose.
 - Existing API unchanged.
 
 ## 0.1.0
