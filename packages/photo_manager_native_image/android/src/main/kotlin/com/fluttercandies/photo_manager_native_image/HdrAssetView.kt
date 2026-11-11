@@ -9,6 +9,7 @@ import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.provider.MediaStore
+import android.util.LruCache
 import android.view.View
 import android.widget.ImageView
 import io.flutter.plugin.common.StandardMessageCodec
@@ -34,6 +35,49 @@ class HdrAssetViewFactory(
  * (API 34+); otherwise it stays transparent.
  */
 private const val PROBE_SAMPLE = 16
+private const val FADE_IN_MS = 200L
+
+/**
+ * Decoded HDR bitmaps by asset id, so a page that comes back draws at once instead of
+ * decoding the original again. Assets without a gain map are remembered too and skipped.
+ * Bitmaps belong to the cache: views never recycle them, and the cache recycles them only
+ * when it is cleared after the last view is gone ([IDLE_CLEAR_MS]).
+ */
+private object HdrDecodeCache {
+    class Entry(val bitmap: Bitmap, val rotation: Int, val size: Int)
+
+    const val IDLE_CLEAR_MS = 10_000L
+
+    val decoded = LruCache<String, Entry>(3)
+    val sdr = LruCache<String, Boolean>(200)
+    private val main = Handler(Looper.getMainLooper())
+    private var live = 0
+    private val clear = Runnable {
+        val entries = decoded.snapshot().values
+        decoded.evictAll()
+        entries.forEach { it.bitmap.recycle() }
+    }
+
+    /** Keeps [entry] only while a view is alive; otherwise recycles it. Main thread only. */
+    fun store(key: String, entry: Entry): Boolean {
+        if (live == 0) {
+            entry.bitmap.recycle()
+            return false
+        }
+        decoded.put(key, entry)
+        return true
+    }
+
+    fun retain() {
+        main.removeCallbacks(clear)
+        live++
+    }
+
+    fun release() {
+        live = maxOf(0, live - 1)
+        if (live == 0) main.postDelayed(clear, IDLE_CLEAR_MS)
+    }
+}
 
 class HdrAssetView(
     context: Context,
@@ -50,10 +94,17 @@ class HdrAssetView(
     private var rotation = 0
 
     init {
+        HdrDecodeCache.retain()
         val id = assetId?.toLongOrNull()
         if (id != null && size > 0 && Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             imageView.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ -> applyMatrix() }
-            try {
+            val hit = HdrDecodeCache.decoded.get(assetId)
+            if (HdrDecodeCache.sdr.get(assetId) == true) {
+                // Known to have no gain map: stay transparent.
+            } else if (hit != null && hit.size >= size && !hit.bitmap.isRecycled) {
+                rotation = hit.rotation
+                imageView.setImageBitmap(hit.bitmap)
+            } else try {
                 executor.execute { decode(context, id, size) }
             } catch (_: Exception) {
                 // The executor was shut down with the engine; the view stays transparent.
@@ -65,9 +116,9 @@ class HdrAssetView(
 
     override fun dispose() {
         disposed = true
-        val bitmap = (imageView.drawable as? android.graphics.drawable.BitmapDrawable)?.bitmap
+        imageView.animate().cancel()
         imageView.setImageDrawable(null)
-        bitmap?.recycle()
+        HdrDecodeCache.release()
     }
 
     private fun decode(context: Context, id: Long, size: Int) {
@@ -83,7 +134,11 @@ class HdrAssetView(
             val small = resolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, probe) } ?: return
             val hasGainmap = small.hasGainmap()
             small.recycle()
-            if (disposed || !hasGainmap) return
+            if (!hasGainmap) {
+                HdrDecodeCache.sdr.put(id.toString(), true)
+                return
+            }
+            if (disposed) return
             val options = BitmapFactory.Options().apply {
                 inSampleSize = ThumbnailMath.sampleSize(bounds.outWidth, bounds.outHeight, size)
             }
@@ -94,7 +149,8 @@ class HdrAssetView(
                 return
             }
             val rotation = decoder.legacyImageMetadata(uri).third
-            mainHandler.post { show(bitmap, rotation) }
+            val entry = HdrDecodeCache.Entry(bitmap, rotation, size)
+            mainHandler.post { if (HdrDecodeCache.store(id.toString(), entry)) show(bitmap, rotation) }
         } catch (_: Exception) {
             // Any failure leaves the view transparent.
         }
@@ -124,14 +180,14 @@ class HdrAssetView(
         return scaled
     }
 
+    /** A first decode fades in so the brighter HDR image does not snap over the base picture. */
     private fun show(bitmap: Bitmap, degrees: Int) {
-        if (disposed) {
-            bitmap.recycle()
-            return
-        }
+        if (disposed || bitmap.isRecycled) return
         rotation = degrees
+        imageView.alpha = 0f
         imageView.setImageBitmap(bitmap)
         applyMatrix()
+        imageView.animate().alpha(1f).setDuration(FADE_IN_MS).start()
     }
 
     private fun applyMatrix() {

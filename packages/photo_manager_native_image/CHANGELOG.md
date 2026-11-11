@@ -11,6 +11,11 @@
   before the full one, so SDR photos are never decoded at full size; on API
   35+ it scales the sampled bitmap down to `size` (kept unscaled if the gain
   map would be lost); and it recycles its bitmap on dispose.
+- `NativeAssetHdrView` keeps the last three decoded HDR images (and remembers
+  assets without a gain map), so a page that comes back draws at once instead of
+  decoding the original again; the cache is cleared 10 s after the last view is
+  gone. A first decode fades in over 0.2 s instead of snapping over the base
+  image. On Android the cache owns its bitmaps, so views no longer recycle them.
 - Existing API unchanged.
 
 ## 0.1.0
